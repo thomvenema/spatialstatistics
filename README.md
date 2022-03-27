@@ -1,8 +1,8 @@
-# Spatial variability of voting turnout in the Netherlands
+# Spatial variability of election turnout in the Netherlands
 Term project for the MSc Applied Data Science course Spatial Statistics &amp; Machine Learning at Utrecht University.
 Performed by Max van den Elsen (2590611), Sander Engelberts (1422138) and Thom Venema (1157485) in March-April 2022
 
-This term project created a geographically weighted regression model to check for the spatial variability of voting turnout in the Netherlands. For this social demographics, population statistics and voting behaviour are used to check if these can explain differences in voting turnout. Using these findings, marketing can be more focussed to get more people to the polling stations.
+This term project created a geographically weighted regression model to check for the spatial variability of election turnout in the Netherlands. For this social demographics, population statistics and voting behaviour are used to check if these can explain differences in election turnout. Using these findings, marketing can be more focussed to get more people to the polling stations.
 
 ## Repository
 Below the paths to code- and other files in the repository can be found together with a short description of what these are about.  
