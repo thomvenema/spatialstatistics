@@ -1,16 +1,15 @@
 library(dplyr)
 library(rstudioapi)
 setwd(dirname(getActiveDocumentContext()$path))
-setwd("data/")  
 getwd()      
 
-plaatsen <- list.files(pattern="")
+plaatsen <- list.files(path="data/",pattern="")
 folderfile <- ""
 folderfile_l <- ""
 count <- 0
 for (i in plaatsen){
-  myFiles <- list.files(path = paste(i,"/", sep=""),pattern="*.csv")
-  folderfile <- paste(i,"/",myFiles, sep="")
+  myFiles <- list.files(path = paste("data/",i,"/", sep=""),pattern="*.csv")
+  folderfile <- paste("data/",i,"/",myFiles, sep="")
   for (j in folderfile){
     count <- count + 1
     folderfile_l[[count]] <- j
