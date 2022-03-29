@@ -30,7 +30,13 @@ for (k in 1:length(folderfile_l)){
 }
 colnames(df_total) <- c("Street/Name", "Zipcode", "Invited", "Turnout", "Turnout percentage")
 
-
-
 write.csv(df_total,"pollingstations.csv", row.names = FALSE)
+
+# Toe te voegen:
+#   -Missende stembureaus
+#   -Samenvoegen duplicates
+#   -Coordinaten
+#   -Buurtcode 
+#   -Population die naar dat stembureau zou gaan gebasseerd op thyssen polgon en aantal stemgerechtigden
+#   -Betere turnout rate
 
