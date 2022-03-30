@@ -1,11 +1,11 @@
 library(dplyr)
 library(rstudioapi)
 library(tidyr)
-#install.packages("zoo")      
 #install.packages("stringdist") 
 library(stringdist)
+
+#WD to local path
 setwd(dirname(getActiveDocumentContext()$path))
-getwd()      
 
 # Importing dataset with polling station locations
 pollstations <- read.csv("data/stembureaus.csv")
@@ -21,7 +21,7 @@ pollstations[5545,3] <- 101
 pollstations[5556,3] <- 18
 pollstations[1722,3] <- 18
 pollstations[1724,3] <- 19
-pollstations[1716,3]<- 16
+pollstations[1716,3] <- 16
 pollstations[4373,3] <- 21
 pollstations[4367,3] <- 23
 pollstations[1031:1040,3] <- c(90,10,40,30,70,20,50,100,60,82)
@@ -46,7 +46,7 @@ pollstations[2067,3] <- 126
 # Make a merger variable for easier merging in a coming loop
 pollstations$merger <- paste(pollstations$CBS.gemeentecode,pollstations$Nummer.stembureau)
 
-# Levenstein distance in percentage 
+# Levenstein distance in percentage. The percentage of the longest word to account for the size differences in the strings
 levens_percent <- function (str1, str2) 
 {
   return(1 - (stringdist(str1, str2, method="lv")/pmax(nchar(str1), nchar(str2))))
@@ -106,6 +106,7 @@ for (k in 1:length(folderfile_l)){
     
     
     # Missing value imputation based on levenstein distance
+    # Dit stuk moet nog naar beneden geplaatst worden voor de missende postcodes bij gemeentes waar postcodes vermeld waren
     for (i in 1:nrow(data_postcode)) {
       if (is.na(data_postcode[i,"Postcode"]) == TRUE){
         # If levenstein similarity is over 50%, imputation . 50% is based on trial and error       
@@ -145,7 +146,7 @@ write.csv(df_total,"pollingstations.csv", row.names = FALSE)
 
 
 
-#     Toe te voegen:
+#    Toe te voegen:
 
 # x  -Missende stembureaus
 # x  -Gebiednummer toevoegen aan eerste deel
@@ -160,7 +161,7 @@ write.csv(df_total,"pollingstations.csv", row.names = FALSE)
 
 
 
-
+## Kladblok om code te testen
 
 test_postcode <- read.csv("data/01_Groningen/osv4-3_telling_gr2022_hethogeland.csv", header=FALSE, sep=";")
 

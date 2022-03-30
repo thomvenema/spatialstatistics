@@ -187,11 +187,11 @@
 "c.r. De Marne","1966","9964AA","680","359",0.527941176470588
 "Concordia","1966","9953PK","792","268",0.338383838383838
 "De Hoogte","1966","9951EP","937","553",0.590181430096051
-"De Hoogte 14-03-2022","1966","9951EP","0","271",Inf
-"De Hoogte 15-03-2022","1966","9951EP","0","347",Inf
+"De Hoogte 14-03-","1966","9951EP","0","271",Inf
+"De Hoogte 15-03-","1966","9951EP","0","347",Inf
 "De Meenschaar","1966","9781GK","1124","575",0.511565836298932
-"De Meenschaar 14-03-2022","1966","9781GK","0","365",Inf
-"De Meenschaar 15-03-2022","1966","9781GK","0","506",Inf
+"De Meenschaar 14-03-","1966","9781GK","0","365",Inf
+"De Meenschaar 15-03-","1966","9781GK","0","506",Inf
 "Dorpshuis Agricola","1966","9953PH","1016","753",0.741141732283465
 "Dorpshuis De Kern","1966","9785AS","1036","678",0.654440154440154
 "Dorpshuis De Warf","1966","9963PH","420","222",0.528571428571429
@@ -209,8 +209,8 @@
 "Het Anker","1966","9982HC","847","607",0.716646989374262
 "HHC Winsum","1966","9951HX","1022","571",0.558708414872798
 "Kantine FC LEO","1966","9965RE","1454","527",0.362448418156809
-"Kantine FC LEO 14-03-2022","1966","9965RE","0","143",Inf
-"Kantine FC LEO 15-03-2022","1966","9965RE","0","185",Inf
+"Kantine FC LEO 14-03-","1966","9965RE","0","143",Inf
+"Kantine FC LEO 15-03-","1966","9965RE","0","185",Inf
 "Kerkgebouw De Poort","1966","9951BG","779","414",0.531450577663671
 "Kronkelhoes","1966","9977RC","740","394",0.532432432432432
 "Ontmoetingscentrum","1966","9971AJ","1150","555",0.482608695652174
@@ -226,8 +226,8 @@
 "Sporthal De Vlijt","1966","9781NR","1163","722",0.620808254514187
 "Sporthal Scherphorn","1966","9982BZ","953","452",0.474291710388248
 "St. Vincentiusgebouw","1966","9981AX","1159","365",0.314926660914582
-"St. Vincentiusgebouw 14-03-2022","1966","9981AX","0","227",Inf
-"St. Vincentiusgebouw 15-03-2022","1966","9981AX","0","364",Inf
+"St. Vincentiusgebouw 14-03-","1966","9981AX","0","227",Inf
+"St. Vincentiusgebouw 15-03-","1966","9981AX","0","364",Inf
 "Terra Winsum","1966","9951TD","1156","648",0.560553633217993
 "Ubbegaheem","1966","9771BB","991","618",0.623612512613522
 "Huis van Cultuur en Bestuur","1","9603 AE","2731","1208",0.442328817283047
@@ -1300,12 +1300,12 @@
 "Kruiskerk","114","7891KS","2006","606",0.30209371884347
 "Kruiskerk (di)","114","7891KS","0","335",Inf
 "Kruiskerk (ma)","114","7891KS","0","266",Inf
-"Mobiel stembureau 1 (ma)","114","7891KS","0","57",Inf
-"Mobiel stembureau 2 (ma)","114","7891KS","0","90",Inf
-"Mobiel stembureau 3 (di)","114","7891KS","0","58",Inf
-"Mobiel stembureau 4 (di)","114","7891KS","0","20",Inf
-"Mobiel stembureau 5 (wo)","114","7891KS","0","78",Inf
-"Mobiel stembureau 6 (wo)","114","7891KS","0","20",Inf
+"Mobiel stembureau 1 (ma)","114",NA,"0","57",Inf
+"Mobiel stembureau 2 (ma)","114",NA,"0","90",Inf
+"Mobiel stembureau 3 (di)","114",NA,"0","58",Inf
+"Mobiel stembureau 4 (di)","114",NA,"0","20",Inf
+"Mobiel stembureau 5 (wo)","114",NA,"0","78",Inf
+"Mobiel stembureau 6 (wo)","114",NA,"0","20",Inf
 "Mondenhal","114","7831HW","1338","174",0.130044843049327
 "Multifunctioneel Centrum De Badde","114","7831BA","1466","686",0.46793997271487
 "Multifunctioneel Centrum De Badde (di)","114","7831BA","0","138",Inf
@@ -2188,10 +2188,10 @@
 "Kulturhus Holten","1742","7463CL","1726","1216",0.704519119351101
 "Kulturhus Holten 1","1742","7463CL","0","444",Inf
 "Kulturhus Holten 2","1742","7463CL","0","756",Inf
-"Mobiel Stembureau 2","1742","7463CL","0","116",Inf
+"Mobiel Stembureau 2","1742",NA,"0","116",Inf
 "Open Hof","1742","7461AT","1448","853",0.589088397790055
 "Sion","1742","7462BN","1707","1070",0.626830697129467
-"Sporthal 't Mossink (voorheen Diessenplas)","1742","7462BN","1464","732",0.5
+"Sporthal 't Mossink (voorheen Diessenplas)","1742",NA,"1464","732",0.5
 "Sporthal 't Mossink (voorheen Haarschool)","1742","7451LS","1752","736",0.420091324200913
 "Sporthal de Stroekeld","1742","7463CH","1696","1198",0.706367924528302
 "voormalige basisschool de Salto","1742","7462JA","1928","1085",0.562759336099585
@@ -3178,8 +3178,8 @@
 "Stadhuis","1403","6981 BH","381","373",0.979002624671916
 "Stadhuis","1503","6981 BH","381","450",1.18110236220472
 "App Waterrijk","222","7031AM","0","677",Inf
-"Brandweer Wehl","222","7031AM","0","325",Inf
-"BS Dichterbij","222","7031AM","0","405",Inf
+"Brandweer Wehl","222",NA,"0","325",Inf
+"BS Dichterbij","222",NA,"0","405",Inf
 "BS OCTA","222","7006NH","0","317",Inf
 "Bs te IJzevoorde","222","7007BC","0","335",Inf
 "DA De Horst","222","7006SM","0","495",Inf
@@ -3206,7 +3206,7 @@
 "OR Gereformeerde Gemeente","222","7006DG","0","586",Inf
 "OR Gereformeerde Gemeente","222","7006DG","0","191",Inf
 "OR Gereformeerde Gemeente ma","222","7006DG","0","169",Inf
-"SO Isselborgh","222","7006DG","0","254",Inf
+"SO Isselborgh","222",NA,"0","254",Inf
 "Speeltuin Schoneveld","222","7003BK","0","982",Inf
 "Sporthal De Bongerd A","222","7007LB","0","611",Inf
 "Sporthal De Bongerd B","222","7007LJ","0","257",Inf
@@ -5074,7 +5074,7 @@
 "Bethelkerk","345","3901HC","1028","483",0.469844357976654
 "Buurthuis 't Turfke","345","3905ZC","1849","863",0.466738777717685
 "Drive-through (gemeentewerf)","345","3902HL","0","386",Inf
-"Gebouw Rode Kruis","345","3902HL","1661","604",0.363636363636364
+"Gebouw Rode Kruis","345",NA,"1661","604",0.363636363636364
 "Gymzaal 't Kofschip","345","3904RS","1552","1232",0.793814432989691
 "Gymzaal Goudmos (1)","345","3904JZ","1614","1084",0.671623296158612
 "Gymzaal Goudmos (2)","345","3904JZ","1834","1020",0.556161395856052
@@ -5089,31 +5089,31 @@
 "Gymzaal Zuiderkruis","345","3902XX","1935","674",0.348320413436693
 "Mobiel Stembureau","345","3901TP","0","97",Inf
 "Pnielkerk","345","3902KD","1673","546",0.326359832635983
-"Salvatorkerk","345","3902KD","1764","629",0.356575963718821
+"Salvatorkerk","345",NA,"1764","629",0.356575963718821
 "Sionskerk","345","3904TL","1859","1087",0.584722969338354
-"Spectrum","345","3904TL","0","456",Inf
-"Spectrum","345","3904TL","0","708",Inf
-"Spectrum","345","3904TL","1485","905",0.609427609427609
+"Spectrum","345",NA,"0","456",Inf
+"Spectrum","345",NA,"0","708",Inf
+"Spectrum","345",NA,"1485","905",0.609427609427609
 "Sporthal Oost (Ontmoetingshuis) (1)","345","3907NJ","1521","724",0.476002629848784
 "Sporthal Oost (Ontmoetingshuis) (2)","345","3907NJ","0","719",Inf
 "Sporthal Oost (Ontmoetingshuis) (3)","345","3907NJ","1749","694",0.396798170383076
-"Voetbalvereniging De Merino's","345","3907NJ","1602","305",0.190387016229713
+"Voetbalvereniging De Merino's","345",NA,"1602","305",0.190387016229713
 "Voetbalvereniging G.V.V.V.","345","3905AE","1664","284",0.170673076923077
 "Voetbalvereniging VRC","345","3905AE","1732","370",0.213625866050808
-"Vredeskerk","345","3905AE","1475","670",0.454237288135593
-"Westerkerk","345","3905AE","0","750",Inf
-"Westerkerk","345","3905AE","0","1160",Inf
+"Vredeskerk","345",NA,"1475","670",0.454237288135593
+"Westerkerk","345",NA,"0","750",Inf
+"Westerkerk","345",NA,"0","1160",Inf
 "Westerkerk","345","3906AL","1473","1351",0.917175831636117
-"Wijkcentrum Duivenwal","345","3906AL","1750","736",0.420571428571429
+"Wijkcentrum Duivenwal","345",NA,"1750","736",0.420571428571429
 "Wijkcentrum Kleine Beer","345","3901SH","1734","533",0.307381776239908
 "Wijkcentrum Panorama","345","3901SH","1749","375",0.214408233276158
-"Wijkkerk De Open Hof","345","3901SH","0","564",Inf
-"Wijkkerk De Open Hof","345","3901SH","0","866",Inf
+"Wijkkerk De Open Hof","345",NA,"0","564",Inf
+"Wijkkerk De Open Hof","345",NA,"0","866",Inf
 "Wijkkerk De Open Hof (1)","345","3902CZ","1895","1007",0.531398416886544
 "Wijkkerk De Open Hof (2)","345","3902CZ","1693","898",0.530419373892498
-"Zaalruimte Het Trefpunt","345","3902CZ","1510","1089",0.721192052980132
-"Zaalruimte Trefpunt","345","3902CZ","0","417",Inf
-"Zaalruimte Trefpunt","345","3902CZ","0","728",Inf
+"Zaalruimte Het Trefpunt","345",NA,"1510","1089",0.721192052980132
+"Zaalruimte Trefpunt","345",NA,"0","417",Inf
+"Zaalruimte Trefpunt","345",NA,"0","728",Inf
 "Ameide Het Spant (maandag)","1","4233 HG","0","227",Inf
 "Ameide Het Spant (dinsdag)","2","4233 HG","0","373",Inf
 "Ameide Het Spant (woensdag)","3","4233 HG","1900","831",0.437368421052632
@@ -6049,7 +6049,7 @@
 "Kennemer Theater","375","1941HD","0","605",Inf
 "Kennemer Theater","375","1941HD","0","1090",Inf
 "Kennemer Theater","375","1941HD","0","718",Inf
-"Mobiel Stembureau","375","1941HD","0","43",Inf
+"Mobiel Stembureau","375",NA,"0","43",Inf
 "Nieuw Akerendam","375","1942BJ","0","612",Inf
 "OBS het Kompas","375","1946AZ","0","456",Inf
 "Speeltuin Jeugd en Vreugd","375","1946TS","0","243",Inf
@@ -6070,31 +6070,31 @@
 "Gemeentehuis","8","1261 JB","0","496",Inf
 "Gemeentehuis","9","1261 JB","0","519",Inf
 "Mobiel stembureau met bep. toegang (15-03-2022)","10","1261 GD","0","20",Inf
-"Adventskerk 14 maart 2022","377","2111HA","0","316",Inf
-"Adventskerk 15 maart 2022","377","2111HA","0","299",Inf
-"Adventskerk 16 maart 2022","377","2111HA","1187","489",0.411962931760741
-"Centraal Servicepunt Bennebroek 14 maart 2022","377","2111HA","0","318",Inf
-"Centraal Servicepunt Bennebroek 15 maart 2022","377","2111HA","0","364",Inf
-"Centraal Servicepunt Bennebroek 16 maart 2022","377","2121VE","1040","498",0.478846153846154
-"Centrum voor Jeugd en Gezin 14 maart 2022","377","2121VE","0","228",Inf
-"Centrum voor Jeugd en Gezin 15 maart 2022","377","2121VE","0","294",Inf
-"Centrum voor Jeugd en Gezin 3 16 maart 2022","377","2061HW","1273","533",0.418695993715632
-"De Nieuwe Kring 16 maart 2022","377","2111AS","1207","593",0.491300745650373
-"De Voghelsanck 16 maart 2022","377","2114ES","939","353",0.375931842385517
-"Dorpshuis Vogelenzang 14 maart 2022","377","2114ER","0","142",Inf
-"Dorpshuis Vogelenzang 15 maart 2022","377","2114ER","0","194",Inf
-"Dorpshuis Vogelenzang 16 maart 2022","377","2114ER","928","429",0.462284482758621
-"Gebouw Tinholt 16 maart 2022","377","2051LA","1571","856",0.544875875238702
-"Gemeentehuis 14 maart 2022","377","2051GJ","0","520",Inf
-"Gemeentehuis 15 maart 2022","377","2051GJ","0","645",Inf
-"Gemeentehuis 3 16 maart 2022","377","2051GJ","1689","977",0.578448786264062
-"Hertenkamp 16 maart 2022","377","2061BA","577","323",0.559792027729636
-"Het Trefpunt 16 maart 2022","377","2121AJ","1154","727",0.62998266897747
-"Jagershuis 16 maart 2022","377","2121GW","1011","315",0.311572700296736
-"Kerkelijk Centrum 16 maart 2022","377","2061JD","1713","700",0.408639813193228
-"Sparrenbosschool 16 maart 2022","377","2121CJ","1021","421",0.412340842311459
-"Vondelschool 16 maart 2022","377","2111CJ","1183","817",0.69061707523246
-"Welzijn Bloemendaal 16 maart 2022","377","2061CH","1786","866",0.48488241881299
+"Adventskerk 14 maart ","377","2111HA","0","316",Inf
+"Adventskerk 15 maart ","377","2111HA","0","299",Inf
+"Adventskerk 16 maart ","377","2111HA","1187","489",0.411962931760741
+"Centraal Servicepunt Bennebroek 14 maart ","377",NA,"0","318",Inf
+"Centraal Servicepunt Bennebroek 15 maart ","377",NA,"0","364",Inf
+"Centraal Servicepunt Bennebroek 16 maart ","377","2121VE","1040","498",0.478846153846154
+"Centrum voor Jeugd en Gezin 14 maart ","377",NA,"0","228",Inf
+"Centrum voor Jeugd en Gezin 15 maart ","377",NA,"0","294",Inf
+"Centrum voor Jeugd en Gezin 3 16 maart ","377","2061HW","1273","533",0.418695993715632
+"De Nieuwe Kring 16 maart ","377","2111AS","1207","593",0.491300745650373
+"De Voghelsanck 16 maart ","377","2114ES","939","353",0.375931842385517
+"Dorpshuis Vogelenzang 14 maart ","377","2114ER","0","142",Inf
+"Dorpshuis Vogelenzang 15 maart ","377","2114ER","0","194",Inf
+"Dorpshuis Vogelenzang 16 maart ","377","2114ER","928","429",0.462284482758621
+"Gebouw Tinholt 16 maart ","377","2051LA","1571","856",0.544875875238702
+"Gemeentehuis 14 maart ","377","2051GJ","0","520",Inf
+"Gemeentehuis 15 maart ","377","2051GJ","0","645",Inf
+"Gemeentehuis 3 16 maart ","377","2051GJ","1689","977",0.578448786264062
+"Hertenkamp 16 maart ","377","2061BA","577","323",0.559792027729636
+"Het Trefpunt 16 maart ","377","2121AJ","1154","727",0.62998266897747
+"Jagershuis 16 maart ","377","2121GW","1011","315",0.311572700296736
+"Kerkelijk Centrum 16 maart ","377","2061JD","1713","700",0.408639813193228
+"Sparrenbosschool 16 maart ","377","2121CJ","1021","421",0.412340842311459
+"Vondelschool 16 maart ","377","2111CJ","1183","817",0.69061707523246
+"Welzijn Bloemendaal 16 maart ","377","2061CH","1786","866",0.48488241881299
 "Gemeentehuis","1","1902 CA","2009","1335",0.664509706321553
 "Tuin van Kapitein Rommel","2","1901 DZ","0","790",Inf
 "Gymzaal Eerste Groenelaan","3","1901 TD","1907","792",0.415312008390142
@@ -8035,12 +8035,12 @@
 "Gymzaal Klerkenhof","547","2353WB","0","1096",Inf
 "Gymzaal Zijlkwartier","547","2352RA","0","800",Inf
 "Korfbalvereniging Velocitas","547","2353BZ","0","857",Inf
-"Mobiel stembureau Ommedijk","547","2353BZ","22011","14",0.000636045613556858
-"Mobiel stembureau Van Alphenstaete en Huis ter Does","547","2353BZ","0","68",Inf
+"Mobiel stembureau Ommedijk","547",NA,"22011","14",0.000636045613556858
+"Mobiel stembureau Van Alphenstaete en Huis ter Does","547",NA,"0","68",Inf
 "Scheppingskerk","547","2352TD","0","1352",Inf
 "Sport- en Recreatiecentrum De Does","547","2351PV","0","385",Inf
-"Winkelhof Dinsdag","547","2351PV","0","1268",Inf
-"Winkelhof Maandag","547","2351PV","0","995",Inf
+"Winkelhof Dinsdag","547",NA,"0","1268",Inf
+"Winkelhof Maandag","547",NA,"0","995",Inf
 "Winkelhofplein","547","2353TH","0","1791",Inf
 "Stembureau Oude Kerk","1","2271 CC","1838","1705",0.927638737758433
 "Stembureau Basisschool Sint Maarten","2","2271 EP","1838","1034",0.562568008705114
@@ -8093,13 +8093,13 @@
 "Buurthuis Salvatori","553","2161ZL","1398","598",0.427753934191702
 "De Beukenhof","553","2161EA","1361","698",0.512858192505511
 "De Poort","553","2162CA","1768","635",0.359162895927602
-"De Poort 14 maart","553","2162CA","0","213",Inf
-"De Poort 15 maart","553","2162CA","0","278",Inf
+"De Poort 14 maart","553",NA,"0","213",Inf
+"De Poort 15 maart","553",NA,"0","278",Inf
 "De Waterkanten (1)","553","2161VA","1507","752",0.499004644990046
 "De Waterkanten (2)","553","2161VA","1726","430",0.249130938586327
 "Floralis","553","2161HX","2102","1087",0.517126546146527
-"Gemeentehuis 14 maart","553","2161HX","0","572",Inf
-"Gemeentehuis 15 maart","553","2161HX","0","705",Inf
+"Gemeentehuis 14 maart","553",NA,"0","572",Inf
+"Gemeentehuis 15 maart","553",NA,"0","705",Inf
 "Gemeentehuis Lisse","553","2161BS","1341","679",0.506338553318419
 "Hotel-Restaurant De Engel","553","2161DG","1227","567",0.462102689486553
 "Polderman BV","553","2161AH","1737","963",0.55440414507772
@@ -8203,8 +8203,8 @@
 "Dorpshuis Abbenbroek","1930","3216AK","1065","542",0.508920187793427
 "Dorpshuis Hekelingen","1930","3209AT","1373","773",0.563000728332119
 "Elementenhuis","1930","3201LS","2334","1024",0.438731790916881
-"Flat de Serreburgh","1930","3201LS","2000","565",0.2825
-"Flat de Serreburgh","1930","3201LS","1985","641",0.322921914357683
+"Flat de Serreburgh","1930",NA,"2000","565",0.2825
+"Flat de Serreburgh","1930",NA,"1985","641",0.322921914357683
 "Gymzaal Koolzaaddreef","1930","3204GK","2423","443",0.182831200990508
 "Gymzaal Mercuriusstraat","1930","3204BM","0","337",Inf
 "Gymzaal Mercuriusstraat","1930","3204BM","0","313",Inf
@@ -8230,7 +8230,7 @@
 "LTV Zuidland","1930","3214VG","1684","422",0.250593824228029
 "Mobielstembureau","1930","3201CZ","0","63",Inf
 "Rivièrabad","1930","3202ST","1735","583",0.336023054755043
-"Roll and Vote","1930","3202ST","0","341",Inf
+"Roll and Vote","1930",NA,"0","341",Inf
 "Theater de Stoep","1930","3201DH","747","189",0.253012048192771
 "Theater de Stoep","1930","3201DH","1000","195",0.195
 "voormalig schoolgebouw De Tweespan","1930","3218XA","0","257",Inf
@@ -8891,8 +8891,8 @@
 "Sportcafe De Eijck","1525","2215KZ","1146","625",0.545375218150087
 "Sportcentrum De Wasbeek","1525","2171DH","1862","726",0.389903329752954
 "TH. Sport & Fitness","1525","2215MH","0","251",Inf
-"Trefpunt 1 14 maart","1525","2215MH","0","331",Inf
-"Trefpunt 1 15 maart","1525","2215MH","0","504",Inf
+"Trefpunt 1 14 maart","1525",NA,"0","331",Inf
+"Trefpunt 1 15 maart","1525",NA,"0","504",Inf
 "Stadskantoor","1","3131 VX","2352","1046",0.444727891156463
 "Stadhuis Burgerzaal","2","3131 CR","2041","425",0.208231259186673
 "Stadsgehoorzaal","3","3134 BB","2282","1179",0.516652059596845
@@ -9215,8 +9215,8 @@
 "Kerkgebouw de Hoeksteen","642","3332JA","2810","487",0.173309608540925
 "Kerkgebouw de Hoeksteen 2","642","3333GZ","0","473",Inf
 "Kerkgebouw Develhof","642","3334BN","1717","549",0.31974373907979
-"Locatie ""Nebo""","642","3334BN","0","94",Inf
-"Locatie ""Swinhove/Ambachtstaete""","642","3334BN","0","54",Inf
+"Locatie ""Nebo""","642",NA,"0","94",Inf
+"Locatie ""Swinhove/Ambachtstaete""","642",NA,"0","54",Inf
 "NS Station Zwijndrecht","642","3331LL","1895","538",0.283905013192612
 "Spektakel Zwijndrecht","642","3332GK","2572","409",0.159020217729393
 "Spektakel Zwijndrecht 1","642","3332GK","0","381",Inf
@@ -9707,8 +9707,8 @@
 "De Poel","1728","5534AD","823","457",0.555285540704739
 "Den Herd - Gindrazaal","1728","5531HM","1804","594",0.329268292682927
 "Den Herd - Sniederszaal","1728","5531HM","1882","573",0.304463336875664
-"Den Tref","1728","5531HM","0","290",Inf
-"Den Tref","1728","5531HM","0","438",Inf
+"Den Tref","1728",NA,"0","290",Inf
+"Den Tref","1728",NA,"0","438",Inf
 "Den Tref","1728","5527EH","2326","847",0.36414445399828
 "Gemeentehuis","1728","5531BC","2803","1276",0.455226542989654
 "Gemeentehuis","1728","5531BC","0","626",Inf
@@ -9949,14 +9949,14 @@
 "Stembureau Gemeenschapshuis D'n Boogerd","215","5512 AJ","0","334",Inf
 "Stembureau 't Bellefort","772","5616NS","2657","450",0.169363944298081
 "Stembureau 't Bellefort","772","5616NS","1","399",399
-"Stembureau Activiteitencentrum De Jagershoef","772","5616NS","1","455",455
+"Stembureau Activiteitencentrum De Jagershoef","772",NA,"1","455",455
 "Stembureau Activiteitencentrum De Jagershoef","772","5625EK","3266","463",0.141763625229639
 "Stembureau Activiteitencentrum Orka","772","5641PC","3603","764",0.212045517624202
 "Stembureau Activiteitencentrum Orka","772","5641PC","1","577",577
 "Stembureau Atelier","772","5615KG","1881","1009",0.536416799574694
 "Stembureau Atlas (TU/E)","772","5612AE","1401","1347",0.961456102783726
 "Stembureau B&O gebouw","772","5624BE","2015","580",0.287841191066998
-"Stembureau Basisschool Atalanta (gymzaal)","772","5624BE","1","445",445
+"Stembureau Basisschool Atalanta (gymzaal)","772",NA,"1","445",445
 "Stembureau Basisschool Atalanta (Gymzaal)","772","5622CL","4153","449",0.108114615940284
 "Stembureau Basisschool Beppino Sarto","772","5645GC","3250","683",0.210153846153846
 "Stembureau Basisschool Beppino Sarto","772","5645GC","1","638",638
@@ -9980,11 +9980,11 @@
 "Stembureau Buurtinfowinkel Bennekel","772","5654LL","2168","491",0.226476014760148
 "Stembureau Buurtinfowinkel Woensel-West","772","5621HB","1944","903",0.464506172839506
 "Stembureau Centraal Station Centrumzijde","772","5611AC","969","785",0.810113519091847
-"Stembureau De Hangar","772","5611AC","1","580",580
+"Stembureau De Hangar","772",NA,"1","580",580
 "Stembureau De Hangar","772","5658LA","1632","582",0.356617647058824
 "Stembureau De Hangar","772","5658LA","3333","584",0.175217521752175
-"Stembureau De Hangar (zalencentrum) (14-03)","772","5658LA","1","505",505
-"Stembureau De Hangar (zalencentrum) (15-03)","772","5658LA","1","667",667
+"Stembureau De Hangar (zalencentrum) (14-03)","772",NA,"1","505",505
+"Stembureau De Hangar (zalencentrum) (15-03)","772",NA,"1","667",667
 "Stembureau Dorpshuis Acht","772","5626BD","3022","832",0.275314361350099
 "Stembureau Dorpshuis Acht","772","5626BD","1","783",783
 "Stembureau Eckartcollege","772","5631KC","3368","485",0.144002375296912
@@ -10001,8 +10001,8 @@
 "Stembureau Gemeenschapshuis De Uitwijk (14-03)","772","5623KC","1","448",448
 "Stembureau Gemeenschapshuis De Uitwijk (15-03)","772","5623KC","1","618",618
 "Stembureau Gymzaal","772","5616EE","1784","659",0.369394618834081
-"Stembureau Gymzaal Atalanta (Barrierweg1)","772","5616EE","2012","440",0.218687872763419
-"Stembureau Gymzaal Basisschool de Korenaar","772","5616EE","1","874",874
+"Stembureau Gymzaal Atalanta (Barrierweg1)","772",NA,"2012","440",0.218687872763419
+"Stembureau Gymzaal Basisschool de Korenaar","772",NA,"1","874",874
 "Stembureau Gymzaal Basisschool de Korenaar","772","5624JL","3841","819",0.213225722468107
 "Stembureau Gymzaal Basisschool De reis van Brandaan","772","5646JD","1758","953",0.542093287827076
 "Stembureau Gymzaal Basisschool Reigerlaan","772","5613CD","978","708",0.723926380368098
@@ -10030,7 +10030,7 @@
 "Stembureau Parktheater","772","5615CN","3204","816",0.254681647940075
 "Stembureau Parktheater","772","5615CN","1","833",833
 "Stembureau Parktheater (Elzentlaan 50)","772","5615CN","3405","825",0.242290748898678
-"Stembureau Popei Klokgebouw","772","5615CN","1","558",558
+"Stembureau Popei Klokgebouw","772",NA,"1","558",558
 "Stembureau Popei Klokgebouw","772","5617AD","2924","583",0.199384404924761
 "Stembureau Salto International school Rise","772","5642GP","3638","451",0.123969213853766
 "Stembureau Salto International school Rise","772","5642GP","1","552",552
@@ -10045,12 +10045,12 @@
 "Stembureau Stadhuis","772","5611EM","1","545",545
 "Stembureau Stadhuis (14-03)","772","5611EM","1","837",837
 "Stembureau Stadhuis (15-03)","772","5611EM","1","1249",1249
-"Stembureau Stembureau op locatie alleen op 14 maart","772","5611EM","1","177",177
-"Stembureau Stembureau op locatie alleen op 14 maart","772","5611EM","1","66",66
-"Stembureau Stembureau op locatie alleen op 14 maart","772","5611EM","1","163",163
-"Stembureau Stembureau op locatie alleen op 15 maart","772","5611EM","1","68",68
-"Stembureau Stembureau op locatie alleen op 15 maart","772","5611EM","1","121",121
-"Stembureau Summa College Welzijn","772","5611EM","1","656",656
+"Stembureau Stembureau op locatie alleen op 14 maart","772",NA,"1","177",177
+"Stembureau Stembureau op locatie alleen op 14 maart","772",NA,"1","66",66
+"Stembureau Stembureau op locatie alleen op 14 maart","772",NA,"1","163",163
+"Stembureau Stembureau op locatie alleen op 15 maart","772",NA,"1","68",68
+"Stembureau Stembureau op locatie alleen op 15 maart","772",NA,"1","121",121
+"Stembureau Summa College Welzijn","772",NA,"1","656",656
 "Stembureau Summa College Welzijn","772","5616JJ","3099","673",0.217166828009035
 "Stembureau Vitalis Jean Sibelius","772","5654CT","2149","733",0.341088878548162
 "Stembureau Wijkcentrum 't Akkertje","772","5645KZ","4129","487",0.117946233954953
@@ -10117,8 +10117,8 @@
 "Buurthuis De Schelf","779","4942AW","0","954",Inf
 "Dongemond Soccer Centre","779","4931EB","0","768",Inf
 "Fort Sint Gertrudis","779","4931AH","0","447",Inf
-"Geertruidskerk","779","4931AH","0","350",Inf
-"Geertruidskerk","779","4931AH","0","476",Inf
+"Geertruidskerk","779",NA,"0","350",Inf
+"Geertruidskerk","779",NA,"0","476",Inf
 "Geertruidskerk","779","4931AX","0","612",Inf
 "Gemeentehuis","779","4941DX","0","1182",Inf
 "Gemeentehuis","779","4941DX","0","593",Inf
@@ -10128,7 +10128,7 @@
 "Ontmoetingscentrum Raamsdonk","779","4944XD","0","123",Inf
 "Ontmoetingscentrum Raamsdonk","779","4944XD","0","264",Inf
 "Sportcafé Dongemond","779","4931AZ","0","312",Inf
-"Woonzorgcentrum de Mauritsstaete","779","4931AZ","0","53",Inf
+"Woonzorgcentrum de Mauritsstaete","779",NA,"0","53",Inf
 "Zaal Boelaars","779","4941GG","0","269",Inf
 "SCC Hofdael","1","5664 HV","1686","902",0.534994068801898
 "Kasteelhoeve Geldrop","2","5662 JG","1376","458",0.332848837209302
@@ -10217,18 +10217,18 @@
 "Basisschool het Bossche Hart 2","1655","4731EB","0","169",Inf
 "Basisschool het Bossche Hart 3","1655","4744BX","2064","671",0.325096899224806
 "Fidei et Arti","1655","4731HV","2255","946",0.419512195121951
-"Gemeentehuis 1","1655","4731HV","0","415",Inf
-"Gemeentehuis 2","1655","4731HV","0","549",Inf
+"Gemeentehuis 1","1655",NA,"0","415",Inf
+"Gemeentehuis 2","1655",NA,"0","549",Inf
 "Gemeentehuis Woensdag","1655","4731GJ","2217","557",0.251240414975192
-"Gemeentewerf 1","1655","4731GJ","0","112",Inf
-"Gemeentewerf 2","1655","4731GJ","0","198",Inf
+"Gemeentewerf 1","1655",NA,"0","112",Inf
+"Gemeentewerf 2","1655",NA,"0","198",Inf
 "Gemeentewerf 3","1655","4731RA","2100","423",0.201428571428571
 "Het Kompas","1655","4741AV","1340","419",0.312686567164179
-"Het Veerhuis 1","1655","4741AV","0","307",Inf
-"Het Veerhuis 2","1655","4741AV","0","497",Inf
+"Het Veerhuis 1","1655",NA,"0","307",Inf
+"Het Veerhuis 2","1655",NA,"0","497",Inf
 "Het Veerhuis 3","1655","4751CS","2056","830",0.403696498054475
-"Sint Jan de Doper kerk 1","1655","4751CS","0","291",Inf
-"Sint Jan de Doper kerk 2","1655","4751CS","0","527",Inf
+"Sint Jan de Doper kerk 1","1655",NA,"0","291",Inf
+"Sint Jan de Doper kerk 2","1655",NA,"0","527",Inf
 "Sint Jan de Doper kerk Woensdag","1655","4741AR","2295","806",0.35119825708061
 "Sporthal de Beuk","1655","4731CG","2259","807",0.357237715803453
 "Sportkantine de Parrestee","1655","4741EJ","2033","930",0.457452041318249
@@ -10369,7 +10369,7 @@
 "Buurthuis","1659","5738AV","1646","605",0.367557715674362
 "Buurthuis (1)","1659","5738AV","0","87",Inf
 "Buurthuis (2)","1659","5738AV","0","166",Inf
-"De Couwenbergh","1659","5738AV","0","881",Inf
+"De Couwenbergh","1659",NA,"0","881",Inf
 "De Couwenbergh (1)","1659","5735EA","2548","340",0.133437990580848
 "De Couwenbergh (2)","1659","5735EA","0","412",Inf
 "De Dreef","1659","5735JB","2172","794",0.365561694290976
@@ -10880,7 +10880,7 @@
 "Centraal Station Tilburg (noordzijde)","855","5041SC","1844","974",0.528199566160521
 "Centraal Station Tilburg (zuidzijde)","855","5038CB","1844","914",0.495661605206074
 "Cinecitta","855","5038BA","1844","631",0.342190889370933
-"Cultureel centrum De Schalm","855","5038BA","1844","1356",0.735357917570499
+"Cultureel centrum De Schalm","855",NA,"1844","1356",0.735357917570499
 "Cultureel centrum De Schalm","855","5057DJ","1844","884",0.47939262472885
 "Cultureel centrum De Schalm","855","5057DJ","1844","622",0.337310195227766
 "Dansschool van Opstal","855","5014ED","1844","866",0.469631236442516
@@ -10888,7 +10888,7 @@
 "De Pelgrimhoeve","855","5018EL","1844","1251",0.678416485900217
 "De Rooi Pannen","855","5042EK","1844","663",0.359544468546638
 "De Wissel","855","5014AE","1844","521",0.282537960954447
-"Drive Inn (evenemententerrein Het Laar)","855","5014AE","1844","287",0.155639913232104
+"Drive Inn (evenemententerrein Het Laar)","855",NA,"1844","287",0.155639913232104
 "Drive Inn (evenemententerrein Het Laar)","855","","1844","281",0.152386117136659
 "Drive Inn (evenemententerrein Het Laar)","855","","1844","228",0.123644251626898
 "Factorium (ingang Bisschop Zwijssenstraat)","855","5038WG","1844","793",0.430043383947939
@@ -10905,11 +10905,11 @@
 "Het Raadhuis Udenhout","855","5071EJ","1844","333",0.18058568329718
 "Interpolis","855","5017JZ","1844","221",0.119848156182213
 "Klasse Theater","855","","1844","356",0.193058568329718
-"MFA De Poorten","855","","1844","1060",0.574837310195228
+"MFA De Poorten","855",NA,"1844","1060",0.574837310195228
 "MFA De Poorten","855","5046LP","1844","798",0.432754880694143
 "MFA De Poorten","855","5046LP","1844","539",0.292299349240781
 "MFA De Symfonie","855","5011EC","1844","1066",0.578091106290672
-"MFA Het Kruispunt","855","5011EC","1844","505",0.273861171366594
+"MFA Het Kruispunt","855",NA,"1844","505",0.273861171366594
 "MFA Het Kruispunt","855","5044KP","1844","348",0.188720173535792
 "MFA Het Kruispunt","855","5044KP","1844","233",0.126355748373102
 "MFA Het Spoor","855","5041AR","1844","964",0.522776572668113
@@ -10924,7 +10924,7 @@
 "Odulphuslyceum","855","5038GC","1844","811",0.439804772234273
 "Parochiezaal de Goede Herder","855","5042JJ","1844","464",0.251626898047722
 "Pathé Tilburg centrum","855","5038BW","1844","508",0.275488069414317
-"Raadzaal Udenhout","855","5038BW","1844","584",0.316702819956616
+"Raadzaal Udenhout","855",NA,"1844","584",0.316702819956616
 "Restaurant Lucebert","855","5038TK","1844","978",0.530368763557484
 "Scholencentrum Grote Beemd","855","5035LZ","1844","956",0.518438177874187
 "Sociëteit Philharmonie","855","5025SB","1844","313",0.169739696312364
@@ -10944,7 +10944,7 @@
 "Voormalig GGD gebouw","855","5037PC","1844","473",0.256507592190889
 "Voormalig GGD gebouw","855","5037PC","1844","815",0.441973969631236
 "Voormalig GGD gebouw","855","5037PC","1844","763",0.413774403470716
-"Wijkcentrum 't Sant","855","5037PC","1844","676",0.366594360086768
+"Wijkcentrum 't Sant","855",NA,"1844","676",0.366594360086768
 "Wijkcentrum 't Sant","855","5042WS","1844","447",0.242407809110629
 "Wijkcentrum 't Sant","855","5042WS","1844","337",0.182754880694143
 "Wijkcentrum De Back","855","5037MJ","1844","1142",0.619305856832972
@@ -10956,7 +10956,7 @@
 "Wijkcentrum Heyhoef","855","5043RX","1844","1747",0.947396963123644
 "Wijkcentrum Heyhoef","855","5043RX","1844","1178",0.63882863340564
 "Wijkcentrum In De Boomtak","855","5038GP","1844","1534",0.831887201735358
-"Wijkcentrum Koningshaven","855","5038GP","1844","885",0.479934924078091
+"Wijkcentrum Koningshaven","855",NA,"1844","885",0.479934924078091
 "Wijkcentrum Koningshaven","855","5021BE","1844","576",0.31236442516269
 "Wijkcentrum Koningshaven","855","5021BE","1844","397",0.21529284164859
 "Wijkcentrum Nieuwe Stede","855","5025LK","1844","1266",0.686550976138829
@@ -11391,23 +11391,23 @@
 "'t Westhoes","928","6466SZ","0","405",Inf
 "'t Westhoes","928","6466HR","1482","654",0.441295546558704
 "Autobedrijf Arsen","928","6464GA","1225","303",0.24734693877551
-"Basisschool De Schatkist","928","6464GA","1662","333",0.200361010830325
+"Basisschool De Schatkist","928",NA,"1662","333",0.200361010830325
 "Café E Jen Bouwerwei","928","6461JK","1423","466",0.327477160927618
-"Catharinahoes","928","6461JK","1848","898",0.485930735930736
+"Catharinahoes","928",NA,"1848","898",0.485930735930736
 "Centrum op de Bies","928","6464CH","1737","461",0.265400115141048
 "Clublokaal KVC Oranje","928","6462SX","1491","240",0.160965794768612
 "Clublokaal LHC","928","6471GJ","1083","163",0.15050784856879
-"Clublokaal V.V. Chevremont","928","6471GJ","822","264",0.321167883211679
+"Clublokaal V.V. Chevremont","928",NA,"822","264",0.321167883211679
 "Clublokaal V.V. R.K.T.S.V.","928","6467BH","1166","396",0.339622641509434
 "FlexiForum","928","6466LZ","992","355",0.357862903225806
-"GaiaZOO","928","6466LZ","0","611",Inf
-"Gebouw Scouting","928","6466LZ","1428","612",0.428571428571429
+"GaiaZOO","928",NA,"0","611",Inf
+"Gebouw Scouting","928",NA,"1428","612",0.428571428571429
 "Gymzaal Singelweg","928","6467CE","1628","372",0.228501228501229
 "HuB","928","6461DR","1706","1113",0.652403282532239
 "HuB","928","6461DR","0","456",Inf
 "HuB","928","6461DR","0","608",Inf
-"Kerk Nassaustraat","928","6461DR","1251","573",0.458033573141487
-"Kling Nullet","928","6461DR","1707","567",0.332161687170475
+"Kerk Nassaustraat","928",NA,"1251","573",0.458033573141487
+"Kling Nullet","928",NA,"1707","567",0.332161687170475
 "P3 't Sjevemethoes","928","6463CP","1454","649",0.446354883081155
 "Roda J.C.","928","6466NH","0","182",Inf
 "SocioProject","928","6471JV","0","345",Inf
@@ -11418,7 +11418,7 @@
 "Theaterzaal De Buun","928","6461VL","1570","340",0.21656050955414
 "Tijdelijk stembureau Gracht","928","","1632","530",0.324754901960784
 "Tijdelijk stembureau Kapellaan","928","","2390","336",0.140585774058577
-"Verenigingsgebouw Heidsjer Tref","928","","1826","672",0.368017524644031
+"Verenigingsgebouw Heidsjer Tref","928",NA,"1826","672",0.368017524644031
 "Burgerhoes","1","6371 LB","1458","928",0.636488340192044
 "Cultuurhuis Landgraaf","2","6371 AW","1130","344",0.304424778761062
 "Ontmoetingsruimte A gen Bruk","3","6371 HW","1308","535",0.409021406727829
