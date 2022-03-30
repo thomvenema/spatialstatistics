@@ -1,8 +1,9 @@
 library(dplyr)
 library(rstudioapi)
 library(tidyr)
-#install.packages("zoo")              
-library(zoo)  
+#install.packages("zoo")      
+#install.packages("stringdist") 
+library(stringdist)
 setwd(dirname(getActiveDocumentContext()$path))
 getwd()      
 
@@ -12,10 +13,10 @@ pollstations <- read.csv("data/stembureaus.csv")
 pollstations <- pollstations[c("Gemeente","CBS.gemeentecode","Nummer.stembureau","Naam.stembureau","Postcode", "Plaats", "X", "Y", "Longitude", "Latitude")]
 pollstations$CBS.gemeentecode <- extract_numeric(pollstations$CBS.gemeentecode)
 
-# Manual imputation of a municipality without numbering of poll stations
+# Manual imputation of a municipality without numbering of poll stations based on overheid dataset
 pollstations[5815:5853,3] <- c(19,22,42,43,34,39,37,11,9,8,2,3,12,32,28,33,29,31,25,41,27,30,18,40,1,15,38,24,17,21,6,35,36,13,23,20,5,7,10)
 pollstations[6192:6221,3] <- c(124,63,19,68,165,114,20,13,16,72,131,128,5,6,11,17,"NA",107,169,64,1,4,26,"NA",3,52,22,32,"NA",71)
-# Manual imputation of wrongly numberd stations
+# Manual imputation of wrongly numbered stations and mismatching station numbers
 pollstations[5545,3] <- 101
 pollstations[5556,3] <- 18
 pollstations[1722,3] <- 18
@@ -45,11 +46,20 @@ pollstations[2067,3] <- 126
 # Make a merger variable for easier merging in a coming loop
 pollstations$merger <- paste(pollstations$CBS.gemeentecode,pollstations$Nummer.stembureau)
 
+# Levenstein distance in percentage 
+levens_percent <- function (str1, str2) 
+{
+  return(1 - (stringdist(str1, str2, method="lv")/pmax(nchar(str1), nchar(str2))))
+}
 
+# Setting up variables for loop
 plaatsen <- list.files(path="data/",pattern="")
 folderfile <- ""
 folderfile_l <- ""
+Rejected_imputation_count <- 0
 count <- 0
+
+# Loop to obtain list of all filepaths in data folder
 for (i in plaatsen){
   myFiles <- list.files(path = paste("data/",i,"/", sep=""),pattern="*.csv")
   folderfile <- paste("data/",i,"/",myFiles, sep="")
@@ -59,6 +69,7 @@ for (i in plaatsen){
   }
 }
 
+# Loop to make dataframe of all voting stations, their turnout and location
 df_total = data.frame()
 for (k in 1:length(folderfile_l)){
   data_verkiezing <- read.csv(folderfile_l[k], header=FALSE, sep=";")
@@ -77,40 +88,67 @@ for (k in 1:length(folderfile_l)){
     data_postcode_1$merger <- paste(data_postcode_1$V5, data_postcode_1$V7)
     data_postcode_1 <- merge(x = data_postcode_1, y = pollstations[c("merger","Postcode")], by = "merger", all.x = TRUE)
     
+    # Section to merge zip codes to the polling station locations
+    
     # Some voting stations had different days of polling. Those were given new pollingstation numbers which are not in the locations dataset
     # As a fix, we sort the dataset at names, and give the polling station with NA's the postal code from the station the row above, which should be the same
     # all cases
     
-    #This only works when the name contains the date in number format, not when the name of the day is displayed. Therefore we remove those
+    # This only works when the name contains the date in number format, not when the name of the day is displayed. Therefore we remove those.
     data_postcode_1$V6<-gsub("maandag","1",as.character(data_postcode_1$V6))
     data_postcode_1$V6<-gsub("dinsdag","2",as.character(data_postcode_1$V6))
     data_postcode_1$V6<-gsub("woensdag","3",as.character(data_postcode_1$V6))
+    data_postcode_1$V6<-gsub("2022","",as.character(data_postcode_1$V6))
     
     
-    #Ordering
+    #Ordering so voting station above is likely to the identical in case of duplicates
     data_postcode <- data_postcode_1[order(data_postcode_1$V6),]
-    data_postcode$Postcode <- na.locf(data_postcode$Postcode) # Maybe built a conditional NA in this with if loop
-    #change column order to match other for loop
+    
+    
+    # Missing value imputation based on levenstein distance
+    for (i in 1:nrow(data_postcode)) {
+      if (is.na(data_postcode[i,"Postcode"]) == TRUE){
+        # If levenstein similarity is over 50%, imputation . 50% is based on trial and error       
+        if (levens_percent(data_postcode[i,"V6"],data_postcode[i-1,"V6"]) >= 0.5){
+        data_postcode[i,"Postcode"] <- data_postcode[i-1,"Postcode"]
+        } else{
+        #List of the remaining stations that were not similar enough to allow imputation
+        data_postcode[i,"Postcode"] = NA
+        print(paste("Original:",data_postcode[i-1,"V6"]))
+        print(paste("Rejected imputation:",data_postcode[i,"V6"]))
+        Rejected_imputation_count <- Rejected_imputation_count + 1
+        }
+      }
+    }
+    
+    #change table order and column names to match earlier loop, for binding
     data_postcode <- data_postcode[, c(3, 2, 7, 5, 6)]
     data_postcode$v6 <- as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,"V8"])
     colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6")
     
     df_total <- rbind(df_total,data_postcode)
-    #Printing a list of all municipalities that have a different file structure
-    print(folderfile_l[k])
-    #Municipalities lack the postal code with we will add matching the municipality and booth name with the different dataset
-    }
+    
+  }
+  
+
 }
 
+# Finalizing
+print(paste("Rejected Imputation Count:",Rejected_imputation_count))
 colnames(df_total) <- c("Street/Name", "stationcode", "Zipcode", "Invited", "Turnout", "Turnout percentage")
 
 write.csv(df_total,"pollingstations.csv", row.names = FALSE)
 
 
 
-# Toe te voegen:
-#   -Missende stembureaus
-# x -Gebiednummer toevoegen aan eerste deel
+
+
+
+
+#     Toe te voegen:
+
+# x  -Missende stembureaus
+# x  -Gebiednummer toevoegen aan eerste deel
 #   -Samenvoegen duplicates
 #   -Coordinaten
 #   -Buurtcode 
