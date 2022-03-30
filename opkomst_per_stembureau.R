@@ -6,17 +6,43 @@ library(zoo)
 setwd(dirname(getActiveDocumentContext()$path))
 getwd()      
 
-#Importing dataset with polling station locations
+# Importing dataset with polling station locations
 pollstations <- read.csv("data/stembureaus.csv")
-#Keeping only relevant columns
+# Keeping only relevant columns
 pollstations <- pollstations[c("Gemeente","CBS.gemeentecode","Nummer.stembureau","Naam.stembureau","Postcode", "Plaats", "X", "Y", "Longitude", "Latitude")]
 pollstations$CBS.gemeentecode <- extract_numeric(pollstations$CBS.gemeentecode)
 
-### Manual imputation of a municipality without numbering of poll stations
+# Manual imputation of a municipality without numbering of poll stations
 pollstations[5815:5853,3] <- c(19,22,42,43,34,39,37,11,9,8,2,3,12,32,28,33,29,31,25,41,27,30,18,40,1,15,38,24,17,21,6,35,36,13,23,20,5,7,10)
+pollstations[6192:6221,3] <- c(124,63,19,68,165,114,20,13,16,72,131,128,5,6,11,17,"NA",107,169,64,1,4,26,"NA",3,52,22,32,"NA",71)
+# Manual imputation of wrongly numberd stations
+pollstations[5545,3] <- 101
+pollstations[5556,3] <- 18
+pollstations[1722,3] <- 18
+pollstations[1724,3] <- 19
+pollstations[1716,3]<- 16
+pollstations[4373,3] <- 21
+pollstations[4367,3] <- 23
+pollstations[1031:1040,3] <- c(90,10,40,30,70,20,50,100,60,82)
+pollstations[2047,3] <- 156
+pollstations[2064,3] <- 73
+pollstations[2058,3] <- 66
+pollstations[2046,3] <- 55
+pollstations[2061,3] <- 69
+pollstations[2062,3] <- 21
+pollstations[2068,3] <- 77
+pollstations[2063,3] <- 72
+pollstations[2055,3] <- 63
+pollstations[2071,3] <- 268
+pollstations[2059,3] <- 167
+pollstations[2066,3] <- 75
+pollstations[2065,3] <- 74
+pollstations[2051,3] <- 59
+pollstations[2048,3] <- 29
+pollstations[2045,3] <- 52
+pollstations[2067,3] <- 126
 
-
-# Make a merger for easier merging
+# Make a merger variable for easier merging in a coming loop
 pollstations$merger <- paste(pollstations$CBS.gemeentecode,pollstations$Nummer.stembureau)
 
 
@@ -54,11 +80,19 @@ for (k in 1:length(folderfile_l)){
     # Some voting stations had different days of polling. Those were given new pollingstation numbers which are not in the locations dataset
     # As a fix, we sort the dataset at names, and give the polling station with NA's the postal code from the station the row above, which should be the same
     # all cases
+    
+    #This only works when the name contains the date in number format, not when the name of the day is displayed. Therefore we remove those
+    data_postcode_1$V6<-gsub("maandag","1",as.character(data_postcode_1$V6))
+    data_postcode_1$V6<-gsub("dinsdag","2",as.character(data_postcode_1$V6))
+    data_postcode_1$V6<-gsub("woensdag","3",as.character(data_postcode_1$V6))
+    
+    
+    #Ordering
     data_postcode <- data_postcode_1[order(data_postcode_1$V6),]
-    #data_postcode$Postcode <- na.locf(data_postcode$Postcode)
-    #change order to match other for loop
+    data_postcode$Postcode <- na.locf(data_postcode$Postcode) # Maybe built a conditional NA in this with if loop
+    #change column order to match other for loop
     data_postcode <- data_postcode[, c(3, 2, 7, 5, 6)]
-    data_postcode$v6 <- "test"#as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,"V8"])
+    data_postcode$v6 <- as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,"V8"])
     colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6")
     
     df_total <- rbind(df_total,data_postcode)
@@ -71,6 +105,8 @@ for (k in 1:length(folderfile_l)){
 colnames(df_total) <- c("Street/Name", "stationcode", "Zipcode", "Invited", "Turnout", "Turnout percentage")
 
 write.csv(df_total,"pollingstations.csv", row.names = FALSE)
+
+
 
 # Toe te voegen:
 #   -Missende stembureaus
