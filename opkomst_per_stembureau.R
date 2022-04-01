@@ -11,7 +11,7 @@ setwd(dirname(getActiveDocumentContext()$path))
 pollstations <- read.csv("data/stembureaus.csv")
 # Keeping only relevant columns
 pollstations <- pollstations[c("Gemeente","CBS.gemeentecode","Nummer.stembureau","Naam.stembureau","Postcode", "Plaats", "X", "Y", "Longitude", "Latitude")]
-pollstations$CBS.gemeentecode <- extract_numeric(pollstations$CBS.gemeentecode)
+pollstations$CBS.gemeentecode <- readr::parse_number(pollstations$CBS.gemeentecode)
 
 # Manual imputation of a municipality without numbering of poll stations based on overheid dataset
 pollstations[5815:5853,3] <- c(19,22,42,43,34,39,37,11,9,8,2,3,12,32,28,33,29,31,25,41,27,30,18,40,1,15,38,24,17,21,6,35,36,13,23,20,5,7,10)
@@ -53,7 +53,7 @@ levens_percent <- function (str1, str2)
 }
 
 # Setting up variables for loop
-plaatsen <- list.files(path="data/",pattern="")
+plaatsen <- list.files(path="data/stembureaus/",pattern="")
 folderfile <- ""
 folderfile_l <- ""
 Rejected_imputation_count <- 0
@@ -61,8 +61,8 @@ count <- 0
 
 # Loop to obtain list of all filepaths in data folder
 for (i in plaatsen){
-  myFiles <- list.files(path = paste("data/",i,"/", sep=""),pattern="*.csv")
-  folderfile <- paste("data/",i,"/",myFiles, sep="")
+  myFiles <- list.files(path = paste("data/stembureaus/",i,"/", sep=""),pattern="*.csv")
+  folderfile <- paste("data/stembureaus/",i,"/",myFiles, sep="")
   for (j in folderfile){
     count <- count + 1
     folderfile_l[[count]] <- j
@@ -71,16 +71,37 @@ for (i in plaatsen){
 
 # Loop to make dataframe of all voting stations, their turnout and location
 df_total = data.frame()
-for (k in 1:length(folderfile_l)){
+for (k in 1:length(folderfile_l)){ 
   data_verkiezing <- read.csv(folderfile_l[k], header=FALSE, sep=";")
+  areanumber <- readr::parse_number(data_verkiezing[4,3])
   if (data_verkiezing[8,1] == "Postcode") {
     data_verkiezing_test <- data_verkiezing %>% slice(c(6,7,8,9,14))
     data_verkiezing_test <- as.data.frame(t(data_verkiezing_test)) %>% slice(-c(1:5))
     data_verkiezing_test$V6 <- as.numeric(data_verkiezing_test$V5)/as.numeric(data_verkiezing_test$V4)
+    data_verkiezing_test$merger <- paste(areanumber,data_verkiezing_test$V2)
+    
+    
+    
+    
+    #Imputation in case postal code for polling station was left out
+    # not the best way but easy
+    for (k in 1:nrow(data_verkiezing_test)){
+      temporary_string <- merge(x = data_verkiezing_test[k,], y = pollstations[c("merger","Postcode")], by = "merger", all.x = TRUE)
+      temporary_string <- temporary_string[1,]
+      temporary_test1 <- temporary_string[,"V3"]
+      temporary_test1 <- ifelse(temporary_test1 == "", NA, temporary_test1)
+      temporary_test2 <- temporary_string[,"Postcode"]
+      temporary_test2 <- ifelse(temporary_test2 == "", NA, temporary_test2)
+      if ((is.na(temporary_test1)  == TRUE && is.na(temporary_test2) == FALSE)){
+        temporary_string[,"V3"] <- temporary_string[,"Postcode"]
+      #temporary_string[,"Postcode"] <- NULL
+      data_verkiezing_test[k,c(1:7)] <- temporary_string[,c(2:7,1)]
+      }
+    }
+    
     df_total <- rbind(df_total,data_verkiezing_test)
   } else {
-    #for (k in 1:length(folderfile_l)){
-     # data_postcode_1 <- read.csv(folderfile_l[k], header=FALSE, sep=";")
+    #The cases where there is no postal code in the .csv file at all
     data_postcode_1 <- as.data.frame(t(data_verkiezing))
     data_postcode_1[,5] <- as.numeric(data_postcode_1[3,4])
     data_postcode_1 <- data_postcode_1[c(5:8,12)] 
@@ -94,16 +115,15 @@ for (k in 1:length(folderfile_l)){
     # As a fix, we sort the dataset at names, and give the polling station with NA's the postal code from the station the row above, which should be the same
     # all cases
     
-    # This only works when the name contains the date in number format, not when the name of the day is displayed. Therefore we remove those.
+    # This only works when the name contains the date in number format, not when the name of the day is displayed. Therefore we remove those. Also to improve 
+    # Levensteihn difference accuracy
     data_postcode_1$V6<-gsub("maandag","1",as.character(data_postcode_1$V6))
     data_postcode_1$V6<-gsub("dinsdag","2",as.character(data_postcode_1$V6))
     data_postcode_1$V6<-gsub("woensdag","3",as.character(data_postcode_1$V6))
     data_postcode_1$V6<-gsub("2022","",as.character(data_postcode_1$V6))
     
-    
     #Ordering so voting station above is likely to the identical in case of duplicates
     data_postcode <- data_postcode_1[order(data_postcode_1$V6),]
-    
     
     # Missing value imputation based on levenstein distance
     # Dit stuk moet nog naar beneden geplaatst worden voor de missende postcodes bij gemeentes waar postcodes vermeld waren
@@ -123,9 +143,10 @@ for (k in 1:length(folderfile_l)){
     }
     
     #change table order and column names to match earlier loop, for binding
-    data_postcode <- data_postcode[, c(3, 2, 7, 5, 6)]
+    
     data_postcode$v6 <- as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,"V8"])
-    colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6")
+    data_postcode <- data_postcode[, c(3, 2, 7, 5, 6, 8, 1)]
+    colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6","merger")
     
     df_total <- rbind(df_total,data_postcode)
     
@@ -135,10 +156,20 @@ for (k in 1:length(folderfile_l)){
 }
 
 # Finalizing
-print(paste("Rejected Imputation Count:",Rejected_imputation_count))
+
 colnames(df_total) <- c("Street/Name", "stationcode", "Zipcode", "Invited", "Turnout", "Turnout percentage")
+print(paste("Rejected Imputation Count:",Rejected_imputation_count))
+print(paste("Total NAs:",sum(is.na(df_total$Zipcode))))
+
+
+#Volgende stap:
+# Loop als postocde overeenkomt en naam voor meer dan 40% > tel bij elkaar op en delete rij
+
+
+
 
 write.csv(df_total,"pollingstations.csv", row.names = FALSE)
+
 
 
 
@@ -155,6 +186,12 @@ write.csv(df_total,"pollingstations.csv", row.names = FALSE)
 #   -Buurtcode 
 #   -Population die naar dat stembureau zou gaan gebasseerd op thyssen polgon en aantal stemgerechtigden
 #   -Betere turnout rate
+
+
+
+
+
+
 
 
 
@@ -184,6 +221,8 @@ data_postcode$v6 <- as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,
 colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6")
 
 #colnames(data_postcode) <- c("Street/Name", "Zipcode", "Invited", "Turnout", "Turnout percentage")
+
+
 
 
 
