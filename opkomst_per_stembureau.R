@@ -52,6 +52,8 @@ levens_percent <- function (str1, str2)
   return(1 - (stringdist(str1, str2, method="lv")/pmax(nchar(str1), nchar(str2))))
 }
 
+### ------------------------------------------------------------------------------ ###
+
 # Setting up variables for loop
 plaatsen <- list.files(path="data/stembureaus/",pattern="")
 folderfile <- ""
@@ -69,6 +71,8 @@ for (i in plaatsen){
   }
 }
 
+### ------------------------------------------------------------------------------ ###
+
 # Loop to make dataframe of all voting stations, their turnout and location
 df_total = data.frame()
 for (k in 1:length(folderfile_l)){ 
@@ -84,7 +88,6 @@ for (k in 1:length(folderfile_l)){
     
     
     #Imputation in case postal code for polling station was left out
-    # not the best way but easy
     for (k in 1:nrow(data_verkiezing_test)){
       temporary_string <- merge(x = data_verkiezing_test[k,], y = pollstations[c("merger","Postcode")], by = "merger", all.x = TRUE)
       temporary_string <- temporary_string[1,]
@@ -157,18 +160,47 @@ for (k in 1:length(folderfile_l)){
 
 # Finalizing
 
-colnames(df_total) <- c("Street/Name", "stationcode", "Zipcode", "Invited", "Turnout", "Turnout percentage")
+colnames(df_total) <- c("Street/Name", "stationcode", "Zipcode", "Invited", "Turnout", "Turnout percentage", "merger")
+df_total$Zipcode <- gsub(" ", "", df_total$Zipcode, fixed = TRUE)
 print(paste("Rejected Imputation Count:",Rejected_imputation_count))
 print(paste("Total NAs:",sum(is.na(df_total$Zipcode))))
 
+### ------------------------------------------------------------------------------ ###
 
-#Volgende stap:
-# Loop als postocde overeenkomt en naam voor meer dan 40% > tel bij elkaar op en delete rij
+# This part is to add up voting results of voting stations which had multiple voting days denoted as multiple stations
 
+df_total_backup <- df_total
+df_total <- df_total_backup
 
+df_total <- df_total[,-6]
+df_total$Turnout <- as.numeric(df_total$Turnout)
+#Removal of the places without a postal code
+df_total <- df_total[!df_total$Zipcode=="",]
+df_total <- df_total[!is.na(df_total$Zipcode),]
+df_total <- df_total[!is.na(df_total[1,]),]
+#Cleanup
+df_total[,1] <- gsub("maandag", "", df_total[,1], fixed = TRUE)
+df_total[,1] <- gsub("dinsdag", "", df_total[,1], fixed = TRUE)
+df_total[,1] <- gsub("woensdag", "", df_total[,1], fixed = TRUE)
+df_total[,1] <- gsub("maart", "", df_total[,1], fixed = TRUE)
+df_total[,1] <- gsub("stembureau", "", df_total[,1], fixed = TRUE)
+#Ordering alphabetially
+df_total <- df_total[order(df_total[,1]),]
 
+df_merged <- data.frame()
+for (v in 1:(nrow(df_total)-1)){
+  ## Check if the string before is the same, and the postal code is the same
+  if (levens_percent(df_total[v,1],df_total[v+1,1]) >= 0.5 && df_total[v,3] == df_total[v+1,3]){
+  ## In that case adding of the two cases
+    df_total[v+1,5] <- df_total[v+1,5] + df_total[v,5]
+  } else {
+  ## Merging it into the dataframe
+    df_merged <- rbind(df_merged,df_total[v,])
+    }
+  }
 
-write.csv(df_total,"pollingstations.csv", row.names = FALSE)
+write.csv(df_merged,"turnout_per_station.csv", row.names = FALSE)
+
 
 
 
@@ -183,7 +215,7 @@ write.csv(df_total,"pollingstations.csv", row.names = FALSE)
 # x  -Gebiednummer toevoegen aan eerste deel
 #   -Samenvoegen duplicates
 #   -Coordinaten
-#   -Buurtcode 
+#   -Buurtcode # Niet meer nodig?
 #   -Population die naar dat stembureau zou gaan gebasseerd op thyssen polgon en aantal stemgerechtigden
 #   -Betere turnout rate
 
