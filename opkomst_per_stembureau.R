@@ -169,8 +169,8 @@ print(paste("Total NAs:",sum(is.na(df_total$Zipcode))))
 
 # This part is to add up voting results of voting stations which had multiple voting days denoted as multiple stations
 
-df_total_backup <- df_total
-df_total <- df_total_backup
+#df_total_backup <- df_total
+#df_total <- df_total_backup
 
 df_total <- df_total[,-6]
 df_total$Turnout <- as.numeric(df_total$Turnout)
@@ -184,7 +184,9 @@ df_total[,1] <- gsub("dinsdag", "", df_total[,1], fixed = TRUE)
 df_total[,1] <- gsub("woensdag", "", df_total[,1], fixed = TRUE)
 df_total[,1] <- gsub("maart", "", df_total[,1], fixed = TRUE)
 df_total[,1] <- gsub("stembureau", "", df_total[,1], fixed = TRUE)
-#Ordering alphabetially
+df_total[,1] <- gsub("Stembureau", "", df_total[,1], fixed = TRUE)
+#Ordering first by zipcode and then alphabetially
+df_total <- df_total[order(df_total[,3]),]
 df_total <- df_total[order(df_total[,1]),]
 
 df_merged <- data.frame()
@@ -199,60 +201,59 @@ for (v in 1:(nrow(df_total)-1)){
     }
   }
 
-write.csv(df_merged,"turnout_per_station.csv", row.names = FALSE)
+
+### ------------------------------------------------------------------------------ ###
+
+# Adding X and Y coordinates
 
 
+#Ordering both pollstations and df_merged for consistency across runs
+pollstations <- pollstations[order(pollstations[,4]),]
+df_merged <- df_merged[order(df_merged[,1]),]
 
+matcher <- data.frame()
+number_turn <- data.frame()
+# Note: takes a long time to run
+for (o in 1:nrow(df_merged) ){ 
+    number_turn[1:nrow(pollstations),1] <- o
+    number_poll <- 1:nrow(pollstations)
+    levmatch <- levens_percent(df_merged[o,1], pollstations[,4])
+    postcodematch <- ifelse(df_merged[o,3] == pollstations[,5],1,0)
+    mergermatch <- ifelse(df_merged[o,6] == pollstations[,11],1,0)     
+    tempdf <- cbind(data.frame(number_turn), data.frame(number_poll), data.frame(levmatch), data.frame(postcodematch), data.frame(mergermatch))
+    tempdf <- filter(tempdf, postcodematch == 1) 
+    #match$num[o,] <- o
+    #print(tempdf)
+    matcher <- rbind(matcher,tempdf)
+}
 
+df_final <- df_merged
+df_final$X <- 0
+df_final$Y <- 0
 
+for (o in 1:nrow(matcher)){
+  row_merged <- matcher[o,1]
+  pollstationrow <- matcher[o,2]
+  x_station <- pollstations[pollstationrow,7]
+  y_station <- pollstations[pollstationrow,8]
+  #rownumber <- 1:nrow(matcher)
+  df_final[row_merged,7] <- x_station
+  df_final[row_merged,8] <- y_station  
+}
 
-
+df_final <- df_final[,c(1,3,4,5,7,8)]
+write.csv(df_final,"turnout_per_station_XY.csv", row.names = FALSE)
 
 
 #    Toe te voegen:
 
 # x  -Missende stembureaus
 # x  -Gebiednummer toevoegen aan eerste deel
-#   -Samenvoegen duplicates
-#   -Coordinaten
+# x  -Samenvoegen duplicates
+# x  -Coordinaten
 #   -Buurtcode # Niet meer nodig?
 #   -Population die naar dat stembureau zou gaan gebasseerd op thyssen polgon en aantal stemgerechtigden
 #   -Betere turnout rate
-
-
-
-
-
-
-
-
-
-
-
-
-## Kladblok om code te testen
-
-test_postcode <- read.csv("data/01_Groningen/osv4-3_telling_gr2022_hethogeland.csv", header=FALSE, sep=";")
-
-
-data_postcode_1 <- as.data.frame(t(test_postcode))
-data_postcode_1[,5] <- as.numeric(data_postcode_1[3,4])
-data_postcode_1 <- data_postcode_1[c(5:8,12)] 
-data_postcode_1 <- data_postcode_1 %>% slice(-c(1:5))
-data_postcode_1$merger <- paste(data_postcode_1$V5, data_postcode_1$V7)
-data_postcode_1 <- merge(x = data_postcode_1, y = pollstations[c("merger","Postcode")], by = "merger", all.x = TRUE)
-
-# Some voting stations had different days of polling. Those were given new pollingstation numbers which are not in the locations dataset
-# As a fix, we sort the dataset at names, and give the polling station with NA's the postal code from the station the row above, which should be the same
-# all cases
-data_postcode <- data_postcode_1[order(data_postcode_1$V6),]
-data_postcode$Postcode <- na.locf(data_postcode$Postcode)
-#change order to match other for loop
-data_postcode <- data_postcode[, c(3, 2, 7, 5, 6)]
-data_postcode$v6 <- as.numeric(data_postcode[,"V12"])/as.numeric(data_postcode[,"V8"])
-colnames(data_postcode) <- c("V1", "V2", "V3", "V4","V5", "V6")
-
-#colnames(data_postcode) <- c("Street/Name", "Zipcode", "Invited", "Turnout", "Turnout percentage")
 
 
 
