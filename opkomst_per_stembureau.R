@@ -178,7 +178,7 @@ df_total$Turnout <- as.numeric(df_total$Turnout)
 df_total <- df_total[!df_total$Zipcode=="",]
 df_total <- df_total[!is.na(df_total$Zipcode),]
 df_total <- df_total[!is.na(df_total[1,]),]
-#Cleanup
+#Cleanup of words irrelevant to station name to increase accuracy of levenstein distance
 df_total[,1] <- gsub("maandag", "", df_total[,1], fixed = TRUE)
 df_total[,1] <- gsub("dinsdag", "", df_total[,1], fixed = TRUE)
 df_total[,1] <- gsub("woensdag", "", df_total[,1], fixed = TRUE)
@@ -213,6 +213,9 @@ df_merged <- df_merged[order(df_merged[,1]),]
 
 matcher <- data.frame()
 number_turn <- data.frame()
+
+# Matching: principle is that im making a dataframe of which station matches with which pollingstation in the other dataset
+# based on postal code match, and also added levenstein distance which allows for manual checking of bad fits/misfits
 # Note: takes a long time to run
 for (o in 1:nrow(df_merged) ){ 
     number_turn[1:nrow(pollstations),1] <- o
@@ -231,6 +234,7 @@ df_final <- df_merged
 df_final$X <- 0
 df_final$Y <- 0
 
+# Adding the coordinates by referencing the numbers in the "merging" file
 for (o in 1:nrow(matcher)){
   row_merged <- matcher[o,1]
   pollstationrow <- matcher[o,2]
