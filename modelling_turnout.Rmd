@@ -1,0 +1,623 @@
+---
+title: "Modelling spatial variability of Municipal Council election turnout in the Netherlands"
+author: "Max van den Elsen (2590611), Sander Engelberts (1422138), and Thom Venema (1157485)"
+date: 'April 2022'
+output: html_document
+---
+Term project for the MSc Applied Data Science course Spatial statistics and machine learning at Utrecht University. 
+
+The code in this notebook is inspired by provided code in the practicals of this course, created by its teachers. 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading required libraries
+This code block loads the required libraries and will ask to install them when these aren't yet.
+```{r, , include=FALSE}
+# include=FALSE makes sure the output of loading/installing isn't printed
+
+# Install packages if required
+if (!require("easypackages")) install.packages("easypackages") # For easy loading of packages
+if (!require("sf")) install.packages("sf") #main GIS package
+if (!require("sp")) install.packages("sp") #needed for some GIS operation, will not be in use from 2023
+if (!require("spdep")) install.packages("spdep") # Neighborhood analysis in R
+if (!require("spatialreg")) install.packages("spatialreg") # Spatial modelling such as lag, error
+if (!require("spgwr")) install.packages("spgwr") #GWR modelling
+if (!require("RColorBrewer")) install.packages("RColorBrewer") # Getting interesting color
+if (!require("tmap")) install.packages("tmap") # Mapping package
+if (!require("mapview")) install.packages("mapview") # Mapping package
+if (!require("car")) install.packages("car") # Some base regression functions
+if (!require("cowplot")) install.packages("cowplot") # Some base regression functions
+if (!require("leafsync")) install.packages("leafsync") # Using with mapview
+if (!require("leaflet.extras2")) install.packages("leaflet.extras2") #using with mapview
+if (!require("tidymodels")) install.packages("tidymodels") # For creating modelling workflows
+if (!require("modelStudio")) install.packages("modelStudio") # Creating interactive model explaining dashboard for random forest
+if (!require("DALEX")) install.packages("DALEX") # Exploring feature importance based on permutation for random forest
+if (!require("DALEXtra")) install.packages("DALEXtra") # Exploring feature importance based on permutation for random forest
+if (!require("vip")) install.packages("vip") # Exploring feature importance based on impurity for random forest
+
+# Load packages
+easypackages::packages ("sf", "sp", "spdep", "spatialreg", "spgwr", "tmap", "mapview", "car", "RColorBrewer", "tidyverse", "cowplot", "leafsync", "leaflet.extras2", "mapview", "tidymodels", "modelStudio", "DALEX", "DALEXtra", "vip") 
+
+# Clean R environment
+rm(list=ls())
+```
+
+## Load and inspect processed data
+The Municipal Council election turnout in the Netherlands of 2022 has been processed into a dataset with the file `opkomst_per_stembureau.R`. This coupled the turnout at polling stations to their location and cleaned the data. Next, this data was aggregated to neighbourhoods in the Netherlands using Thiessen polygons around the polling stations and a weighted average over these polygons a neighbourhood area overlaps. For these neighbourhoods also the independent variables were retrieved from CBS to create the final dataset that will be used for our models. Here now first load and inspect that data.
+
+```{r}
+# Loading .csv file with processed data
+# TODO: may also be that this will be .gpkg or .shp
+neighbourhood_data <- read.csv("")
+
+# Check the variables
+names(neighbourhood_data)
+```
+
+```{r}
+# Plot the neighbourhoods
+plot(neighbourhood_data$geometry) # TODO: can make this a nicer looking ggplot
+```
+
+```{r}
+# Explore the data distributions
+# Plot the turnout data
+turnout_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = turnout)) +
+  theme_classic()
+
+# Plot the education variable # TODO: use the actual predictors and add the other interesting ones as well
+education_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="green3", aes(x = education)) +
+  theme_classic()
+
+# Show the density plots of interesting variables in a grid # TODO: may need to set how many displayed in a row and such
+plot_grid(turnout_plot, education_plot, labels = "AUTO")
+```
+
+```{r}
+# TODO: add some more plots with sliders to check specific variable distributions against dependent variable turnout
+
+# Map the dependent variable turnout
+turnout_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "turnout", 
+                                col.regions=brewer.pal(11, "YlOrRd"))
+
+# Map interesting independent variables to compare with the spatial distribution of the independent variable # TODO add the other variables as well
+education_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "education", 
+                                col.regions=brewer.pal(11, "YlOrRd"))
+```
+
+```{r}
+# Display two maps with a slider to compare the spatial distribution of the variables in all the neighborhoods # TODO: do this for combinations of all other interesting independent variables against the turnout (and maybe some relations between some of the predictor variables)
+turnout_map | education_map 
+```
+
+## Pre-process data
+Pre-process the data by creating a training and test dataset, normalizing the variables, and creating a model recipe with the model equation. Additionally,  cross validation splits will be created with one taking into account spatial coordinates and the other one not, to check for difference in tuned parameters and model performance.
+
+```{r}
+# Set seed for reproducible results
+set.seed(123)
+
+# TODO: potentially drop geometry column if exists, but keep X&Y in RD New
+
+# Split the data into a training (75%) and test (25%) set using stratification on the dependent variable (turnout) to have a representative test sample
+data_split <- rsample::initial_split(neighbourhood_data, strata = "turnout", prop = 0.75)
+train_data <- rsample::training(data_split)
+test_data  <- rsample::testing(data_split)
+
+# Declare the set explicit
+train.set <- train_data
+test.set <- test_data
+```
+
+```{r}
+# For the training dataset, create cross validation splits
+# Create split without spatial cross-validation, but consider the dependent variable on which to stratify. Here the number of samples per fold is relatively equal, whereas with spatial cross-validation this is less the case
+cv_splits <- rsample::vfold_cv(train.set, strata = "turnout", k = 10) #here K is the number of fold, k=10 is ten fold CV
+print(cv_splits)
+```
+
+```{r}
+# Create split with spatial cross-validation by clustering coordinate information
+cv_spatial_folds <- spatial_clustering_cv(train.set, coords = c("X", "Y"), v = 10)
+print (cv_spatial_folds) 
+```
+
+Now the data is ready, the model recipe is defined.
+```{r}
+# Set the equation model recipe for predicting the dependent variable turnout
+model_rec <- recipe(turnout ~ ...+...) %>%
+  # Normalize the predictor variables using z-normalization
+  step_zv(all_predictors()) %>%
+  # Centralize some predictors # TODO: example did this only for some
+  step_center(all_predictors()) %>%
+  # Scale predictors with large values # TODO: example did this only for some
+  step_scale(all_predictors())
+
+# Inspect the final recipe by first preparing and then juicing it using glimpse, which shows the model structure for some samples
+glimpse(model_rec %>% prep() %>% juice())
+```
+
+## Set up workflows for training models
+Create the model workflows which will be used for training and predicting different models using the recipe, and set up grid search with a cross validation process for hyperparameter tuning. This then results in the final, optimal models to employ. Below first the model plans are created for linear regression, geographically weighted regression, and random forest models.
+
+```{r}
+# Create the model plans, indicating which types of models to fit and what hyperparameters to tune
+
+# Linear regression plan
+lm_plan <- 
+  linear_reg() %>% 
+  set_engine("lm")
+
+# Geographically weighted regression plan # TODO: may need to convert data into spatial object still, or supply coords instead # TODO: possible also add a SGWR model here and in the other code blocks to allow some variables to be stationary and hence reducing model complexity
+gwr_plan <- parsnip::gwr() %>%
+  parsnip::set_args(longlat = FALSE) %>% # TODO: is in X&Y of RD New
+  parsnip::set_args(gweight = tune()) %>%
+  parsnip::set_args(hatmatrix=TRUE) %>%
+  parsnip::set_args(se.fit=TRUE) %>%
+  parsnip::set_args(adapt = tune()) %>%
+  parsnip::set_engine("ranger", importance = "permutation") %>% 
+  parsnip::set_mode("regression")
+
+# Random forest plan
+rf_plan <- parsnip::rand_forest() %>%
+  parsnip::set_args(mtry  = tune()) %>%
+  parsnip::set_args(min_n = tune()) %>%
+  parsnip::set_args(trees = 2000) %>% # Setting the first search with 2000 trees # TODO: could tune this as well but that makes the tuning time much much longer probably
+  parsnip::set_engine("ranger", importance = "permutation") %>% 
+  parsnip::set_mode("regression")
+```
+
+For the hyperparameters that are set to be tuned above, set up the grid search combinations to use for tuning. 
+```{r}
+# Use the expansion option for setting the grids # TODO: decide on which option to select
+# Geographically weighted regression
+gwr_grid <- expand.grid (gweight = c(gwr.Gauss, gwr.bisquare), # TODO: check if this works for varying shape of kernel
+                         adapt = c(10, 50, 100, 500)) # TODO: set this based on how many neighbourhoods we have
+
+# Random forest grid
+rf_grid <- expand.grid (mtry = c(3,6,9), 
+                       min_n = c(100,500,800)) # TODO: set this based on how many neighbourhoods we have
+```
+
+Now we can create the workflow for training the models to match the model recipe with the model plans.
+
+```{r}
+# Set model workflows
+# Linear regression
+lm_wf <-
+  workflows::workflow() %>% 
+  add_recipe(model_rec) %>% 
+  add_model(lm_plan)
+
+# Geographically weighted regression
+gwr_wf <-
+  workflows::workflow() %>% 
+  add_recipe(model_rec) %>% 
+  add_model(gwr_plan)
+
+# Random forest
+rf_wf <-
+  workflows::workflow() %>% 
+  add_recipe(model_rec) %>% 
+  add_model(rf_plan)
+```
+
+## Determine the best tuned hyperparameters and corresponding models
+The created workflows are now used to tune the models to their grids to be able to extract the optimal hyperparameters and their corresponding models. This is done using the cross validation datasets.
+```{r}
+# Train linear regression (no hyperparameters to tune) 
+lm_tuned <- fit(lm_wf, data = cv_splits) # Without spatial cross-validation
+lm_tuned_spatial <- fit(lm_wf, data = cv_spatial_folds) # With spatial cross-validation 
+
+# Tune model hyperparameters
+# Geographically weighted regression
+gwr_tuned <- tune_grid(gwr_wf, resamples = cv_splits, grid = gwr_grid) # Without spatial cross-validation
+gwr_tuned_spatial <- tune_grid(gwr_wf, resamples = cv_spatial_folds, grid = gwr_grid) # With spatial cross-validation
+
+# Random forest
+rf_tuned <- tune_grid(rf_wf, resamples = cv_splits, grid = rf_grid) # Without spatial cross-validation
+rf_tuned_spatial <- tune_grid(rf_wf, resamples = cv_spatial_folds, grid = rf_grid) # With spatial cross-validation
+```
+
+Extract the best hyperparameters from each above tuned models and their corresponding optimal models based on their training performance.
+```{r}
+# Extract the best parameters based on RMSE, also used for evaluating performance on the test data
+# Linear regression 
+lm_best_params <- select_best(lm_tuned, metric = "rmse", maximize = FALSE) # Without spatial cross-validation
+lm_best_params_spatial <- select_best(lm_tuned_spatial, metric = "rmse", maximize = FALSE) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_best_params <- select_best(gwr_tuned, metric = "rmse", maximize = FALSE) # Without spatial cross-validation
+gwr_best_params_spatial <- select_best(gwr_tuned_spatial, metric = "rmse", maximize = FALSE) # With spatial cross-validation
+
+# Random forest
+rf_best_params <- select_best(rf_tuned, metric = "rmse", maximize = FALSE) # Without spatial cross-validation
+rf_best_params_spatial <- select_best(rf_tuned_spatial, metric = "rmse", maximize = FALSE) # With spatial cross-validation
+```
+
+```{r}
+# Pull best hyperparameter combinations from the 10-fold cross validated predictions
+# Linear regression
+lm_best_OOF_preds <- collect_predictions(lm_tuned) # Without spatial cross-validation
+lm_best_OOF_preds_spatial <- collect_predictions(lm_tuned_spatial) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_best_OOF_preds <- collect_predictions(gwr_tuned) %>% 
+  filter(gweight  == gwr_best_params$gweight[1] & adapt == gwr_best_params$adapt[1]) # Without spatial cross-validation
+gwr_best_OOF_preds_spatial <- collect_predictions(gwr_tuned_spatial) %>% 
+  filter(gweight  == gwr_best_params_spatial$gweight[1] & adapt == gwr_best_params_spatial$adapt[1]) # With spatial cross-validation
+
+# Random forest
+rf_best_OOF_preds <- collect_predictions(rf_tuned) %>% 
+  filter(mtry  == rf_best_params$mtry[1] & min_n == rf_best_params$min_n[1]) # Without spatial cross-validation
+rf_best_OOF_preds_spatial <- collect_predictions(rf_tuned_spatial) %>% 
+  filter(mtry  == rf_best_params_spatial$mtry[1] & min_n == rf_best_params_spatial$min_n[1]) # With spatial cross-validation
+```
+
+```{r}
+# Retrieve the best parameter models
+# Linear regression
+lm_best_OOF_preds <- lm_best_OOF_preds %>% dplyr::select(-id,-.config) # Without spatial cross-validation
+lm_best_OOF_preds_spatial <- lm_best_OOF_preds_spatial %>% dplyr::select(-id,-.config) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_best_OOF_preds <- gwr_best_OOF_preds %>% dplyr::select(-id,-.config) # Without spatial cross-validation
+gwr_best_OOF_preds_spatial <- gwr_best_OOF_preds_spatial %>% dplyr::select(-id,-.config) # With spatial cross-validation
+
+# Random forest
+rf_best_OOF_preds <- rf_best_OOF_preds %>% dplyr::select(-id,-.config) # Without spatial cross-validation
+rf_best_OOF_preds_spatial <- rf_best_OOF_preds_spatial %>% dplyr::select(-id,-.config) # With spatial cross-validation
+```
+
+Evaluate performance of these best tuned models on training data.
+```{r}
+# Make prediction for each model and attach error statistics
+OOF_preds <- rbind(data.frame(lm_best_OOF_preds %>% dplyr::select(.pred,turnout),model = "Model-1a_Linear Regression"),
+                   data.frame(lm_best_OOF_preds_spatial %>% dplyr::select(.pred,turnout),model = "Model-1b_Linear Regression spatial"),
+                   data.frame(gwr_best_OOF_preds %>% dplyr::select(.pred,turnout),model = "Model-2a_Geographically Weighted Regression"),
+                   data.frame(gwr_best_OOF_preds_spatial %>% dplyr::select(.pred,turnout),model = "Model-2b_Geographically Weighted Regression spatial"),
+                   data.frame(rf_best_OOF_preds %>% dplyr::select(.pred,turnout),model = "Model-3a_Random Forest"), 
+                   data.frame(rf_best_OOF_preds_spatial %>% dplyr::select(.pred,turnout),model = "Model-3b_Random Forest spatial")) %>% 
+  group_by(model) %>% 
+  mutate(
+    RMSE = yardstick::rmse_vec(turnout, .pred),
+    MAE  = yardstick::mae_vec(turnout, .pred),
+    MAPE = yardstick::mape_vec((turnout+1), (.pred+1))) %>% 
+  ungroup()
+```
+
+```{r}
+# Plot average squared error (RMSE) for each model 
+ggplot(data = OOF_preds %>%
+         dplyr::select(model, RMSE) %>%
+         distinct() ,
+       aes(x = model, y = RMSE, group = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_path(color = "green") +
+  geom_label(aes(label = round(RMSE,3))) +
+  theme_bw()
+```
+
+```{r}
+# Plot mean absolute error (MAE) for each model
+ggplot(data = OOF_preds %>%
+         dplyr::select(model, MAE) %>%
+         distinct() ,
+       aes(x = model, y = MAE, group = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_path(color = "red") +
+  geom_label(aes(label = round(MAE,3))) +
+  theme_bw()
+```
+
+```{r}
+# TODO: could also plot MAPE
+
+# Plot predicted versus the observed values for each model in scatter plots
+ggplot(OOF_preds, aes(y=.pred , x = turnout,group = model)) + 
+  geom_point(alpha = 0.3) +
+  coord_equal() +
+  geom_abline(linetype = "dashed",color = "blue") +
+  geom_smooth(method="lm", color = "red") +
+  facet_wrap(~model,ncol = 3)+
+  theme_bw()+
+  ylim(0, 10)+
+  xlim(0, 10)
+```
+
+As can be seen, the different models predict differently and have varying level of training errors.
+
+## Evaluate models on test data
+To check how well the models generalise to unseen data, the predictions are made for the test data and corresponding errors are determined. For this the models with best parameters are first fit with the full training dataset and not only cross validation folds.
+```{r}
+# Create final workflow
+# Linear regression
+lm_best_wf     <- finalize_workflow(lm_wf, lm_best_params) # Without spatial cross-validation
+lm_best_wf_spatial     <- finalize_workflow(lm_wf, lm_best_params_spatial) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_best_wf     <- finalize_workflow(gwr_wf, gwr_best_params) # Without spatial cross-validation
+gwr_best_wf_spatial     <- finalize_workflow(gwr_wf, gwr_best_params_spatial) # With spatial cross-validation
+
+# Random forest
+rf_best_wf     <- finalize_workflow(rf_wf, rf_best_params) # Without spatial cross-validation
+rf_best_wf_spatial     <- finalize_workflow(rf_wf, rf_best_params_spatial) # With spatial cross-validation
+```
+
+```{r}
+# Fit models on full training dataset
+# Linear regression
+lm_val_fit_geo <- lm_best_wf %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # Without spatial cross-validation
+lm_val_fit_geo_spatial <- lm_best_wf_spatial %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_val_fit_geo <- gwr_best_wf %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # Without spatial cross-validation
+gwr_val_fit_geo_spatial <- gwr_best_wf_spatial %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # With spatial cross-validation
+
+# Random forest
+rf_val_fit_geo <- rf_best_wf %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # Without spatial cross-validation
+rf_val_fit_geo_spatial <- rf_best_wf_spatial %>% 
+  last_fit(split     = data_split,
+           control   = control,
+           metrics   = metric_set(rmse, rsq)) # With spatial cross-validation
+```
+
+```{r}
+# Using these final trained models, make predictions for the test dataset and get the best configuration for the test data for required models
+# Linear regression
+lm_val_pred_geo     <- collect_predictions(lm_val_fit_geo) # Without spatial cross-validation
+lm_val_pred_geo_spatial     <- collect_predictions(lm_val_fit_geo_spatial) # With spatial cross-validation
+
+# Geographically weighted regression
+gwr_val_pred_geo     <- collect_predictions(gwr_val_fit_geo)
+gwr_val_pred_geo <- gwr_val_pred_geo %>% dplyr::select(-id,-.config) # Without spatial cross-validation
+gwr_val_pred_geo_spatial     <- collect_predictions(gwr_val_fit_geo_spatial)
+gwr_val_pred_geo_spatial <- gwr_val_pred_geo_spatial %>% dplyr::select(-id,-.config) # With spatial cross-validation
+
+# Random forest
+rf_val_pred_geo     <- collect_predictions(rf_val_fit_geo)
+rf_val_pred_geo <- rf_val_pred_geo %>% dplyr::select(-id,-.config) # Without spatial cross-validation
+rf_val_pred_geo_spatial     <- collect_predictions(rf_val_fit_geo_spatial)
+rf_val_pred_geo_spatial <- rf_val_pred_geo_spatial %>% dplyr::select(-id,-.config) # With spatial cross-validation
+```
+
+```{r}
+# Aggregate test set predictions (these do not overlap with training prediction set, which is OOF_preds) with error statistics
+val_preds <- rbind(data.frame(dplyr::select(lm_val_pred_geo, .pred, turnout), model = "Model-1a_Linear Regression"),
+                   data.frame(dplyr::select(lm_val_pred_geo_spatial, .pred, turnout), model = "Model-1b_Linear Regression spatial"),
+                   data.frame(dplyr::select(gwr_val_pred_geo, .pred, turnout), model = "Model-2a_Geographically Weighted Regression"),
+                   data.frame(dplyr::select(gwr_val_pred_geo_spatial, .pred, turnout), model = "Model-2b_Geographically Weighted Regression spatial"),
+                   data.frame(dplyr::select(rf_val_pred_geo, .pred, turnout), model = "Model-3a_Random Forest"),
+                   data.frame(dplyr::select(rf_val_pred_geo_spatial, .pred, turnout), model = "Model-3b_Random Forest spatial")) %>% 
+  group_by(model) %>% 
+  mutate(RMSE = yardstick::rmse_vec(turnout, .pred),
+         MAE  = yardstick::mae_vec(turnout, .pred),
+         MAPE = yardstick::mape_vec((turnout+1), (.pred+1)),
+         absE=abs(turnout-.pred)) %>% 
+  ungroup()
+```
+
+```{r}
+# Plot average squared error (RMSE) for each model 
+ggplot(data = val_preds %>% 
+                           dplyr::select(model, RMSE) %>% 
+                           distinct() , 
+                         aes(x = model, y = RMSE, group = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_path(color = "green") +
+  geom_label(aes(label = round(RMSE,4))) +
+  theme_bw()
+```
+
+```{r}
+# Plot mean absolute error (MAE) for each model
+ggplot(data = val_preds %>%
+         dplyr::select(model, MAE) %>%
+         distinct() ,
+       aes(x = model, y = MAE,group = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_path(color = "red") +
+  geom_label(aes(label = round(MAE,3))) +
+  theme_bw()
+```
+
+```{r}
+# TODO: could also plot MAPE and absE, and possibly calculate the AIC heuristic
+
+# Plot predicted versus the observed values for each model in scatter plots
+ggplot(val_preds, aes(y=.pred , x = turnout,group = model))+ 
+  geom_point(alpha = 0.3) +
+  coord_equal() +
+  geom_abline(linetype = "dashed",color = "red") +
+  geom_smooth(method="lm", color = "blue") +
+  facet_wrap(~model,ncol = 3)+
+  theme_bw()+
+  ylim(0,10)+
+  xlim(0,10)
+```
+
+As can be seen, like with the performance on training data, the different models predict differently and have varying level of testing errors.
+
+## Check for spatial autocorrelation with linear regression model
+Check if the assumptions of final trained linear regression model hold using this dataset (likely not), by investigating multicollinearity and spatial autocorrelation.
+```{r}
+# Check multicollinearity
+vif(lm_val_fit_geo) # Without spatial cross-validation
+vif(lm_val_fit_geo_spatial) # With spatial cross-validation
+```
+
+```{r}
+# Check spatial autocorrelation
+# Create Queen's Contiguity adjacency matrix # TODO: can also check for other weight matrices
+adjacency_nbq <- poly2nb(neighbourhood_data, queen=TRUE) #Queen's Contiguity neighborhood
+adjacency_nbq_w <- nb2listw(adjacency_nbq, style="W") #Queen's neighborhood wights
+
+# Plot adjacent neighbours with line between them
+coordsW <- neighbourhood_data%>%
+  st_centroid()%>%
+  st_geometry()
+plot(adjacency_nbq, st_geometry(coordsW), col="red") 
+```
+
+```{r}
+# Because the moran.test function for retrieving the Moran's I is sensitive to irregularly distributed polygons, here we use a Monte Carlo method to bootstrap different polygon distribution (with moran.mc() function)
+# Without spatial cross-validation
+mc_global <- moran.mc(lm_val_fit_geo$residuals, adjacency_nbq_w, 2999, alternative="greater")
+# TODO: set that 2999 to sensible number
+
+# Plot the  Moran's I
+plot(mc_global)
+
+print(mc_global) #As the p value is significant we reject the null hypothesis that there is no significant autocorrelations among the variable, and accept that, the residual has spatial clustering
+
+# Plot the residual on the neighbourhood polygons
+neighbourhood_data$res_lm <- residuals(lm_val_fit_geo)
+lmres <- qtm(neighbourhood_data, "res_lm")
+lmres 
+```
+
+```{r}
+# With spatial cross-validation
+mc_global_spatial <- moran.mc(lm_val_fit_geo_spatial$residuals, adjacency_nbq_w, 2999, alternative="greater")
+# TODO: set that 2999 to sensible number
+
+# Plot the  Moran's I
+plot(mc_global_spatial)
+
+print(mc_global_spatial) # As the p value is significant we reject the null hypothesis that there is no significant autocorrelations among the variable, and accept that, the residual has spatial clustering
+
+# Plot the residual on the neighbourhood polygons
+neighbourhood_data$res_lm_spatial <- residuals(lm_val_fit_geo_spatial)
+lmres_spatial <- qtm(neighbourhood_data, "res_lm_spatial")
+lmres_spatial 
+```
+
+For both linear regression models that are trained on a cross validation split with and without taking the spatial nature of the dataset into account, significant spatial autocorrelation in the data can be concluded.
+
+## Investigate non-stationarity with geographically weighted regression model
+Now the geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
+```{r}
+# Put the Geographically Weighted Regression with adaptive kernel results in data frame
+gwr_out <- as.data.frame(gwr_val_fit_geo$SDF) # Without spatial cross-validation
+gwr_out_spatial <- as.data.frame(gwr_val_fit_geo_spatial$SDF) # With spatial cross-validation
+```
+
+```{r}
+# Join the local R2 for each GWR model to each neighborhood and display its distribution
+# Without spatial cross-validation
+neighbourhood_data$amb_localR2 <- gwr_out$localR2
+mapview::mapview(neighbourhood_data, zcol = "amb_localR2", col.regions=brewer.pal(11, "RdYlGn")) 
+
+# With spatial cross-validation
+neighbourhood_data$amb_localR2_spatial <- gwr_out_spatial$localR2
+mapview::mapview(neighbourhood_data, zcol = "amb_localR2_spatial", col.regions=brewer.pal(11, "RdYlGn")) 
+```
+
+```{r}
+#' Create two maps in one venster with a slider to compare Geographically Weighted Regression coefficients of a predictor variable with its significance levels by first joining these values to their respective neighbourhood polygons
+#' 
+#' @param data Dataset with the polygon geometry information to which to join the coefficient and significance values
+#' @param gwr_results Data frame with results of trained Geographically Weighted Regression model. This is different for the model trained using spatial cross-validation and when spatial was not taken into account for cross-validation
+#' @param predictor String with the name of the predictor variable to create these maps for
+#' @param suffix String (default "") with a suffix for the predictor name when the coefficient and significance values are added as column to data. This can uniquely refer to the model used for training to get unique column names, e.g. "spatial".
+#'
+map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
+  # Determine the coefficient variability over space for all relevant predictors, after joining that with the neighbourhood polygons. This plot will now only be created and later be shown together with its predictor significance plot
+  # Create column name for adding coefficient values to data
+  acoef_str <- paste("acoef", predictor, suffix, sep="_") 
+  # Join coefficient values with neighbourhoods
+  data[acoef_str] <- gwr_results[,predictor]
+  # Create map of coefficient values
+  gwr_coef <- mapview::mapview(data, zcol = acoef_str)
+  
+  # Compute and map the statistical significance for variable using t-test. Plot this next to the map with its respective coefficient value distribution
+  # Create column names for adding significance values to data
+  pred_str_se <- paste(predictor, "se", sep="_")
+  pred_str_at <- paste("at", predictor, sep="_")
+  pred_str_at_cat <- paste(pred_str_at, "cat", sep="_")
+  # Estimate the t-value for variable 
+  data$at_Green_avail = gwr_results[,predictor] / gwr_results[,pred_str_se]
+  # Categorize the t-value to statistical significance
+  data[pred_str_at_cat] <- cut(data[,pred_str_at],
+                                    breaks=c(min(data[,pred_str_at]),
+                                             -1.96, 1.96,
+                                             max(data[,pred_str_at])),
+                                    labels=c("sig","nonsig", "sig"))
+  # Make plot of the variable significance 
+  gwr_sig <- mapview::mapview(data, zcol = pred_str_at_cat)
+  
+  # Compare the coefficient and significance maps of this variable
+  gwr_coef | gwr_sig
+}
+```
+
+```{r}
+# TODO: get a variable that actually exists, and run this function for multiple others too
+# Without spatial cross-validation
+map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="education", suffix="")
+
+# With spatial cross-validation
+map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_spatial, predictor="education", suffix="spatial")
+```
+
+## Inspect important variables of random forest model
+To investigate what variables are most important for the Random Forest model to make its predictions, the feature importance is determined and plotted. This shows which variables were most important in predicting the turnout. The importance is first shown based on the impurity metric and after in an interactive model based on permutation, which is more robust. In this interactive model also the partial dependence of different variables can be explored to check their relations. Note that this can take quite a bit of time to run.
+```{r}
+# Plot the variable importance based on goodness of split (based on impurity metric) 
+# Without spatial cross-validation
+vip::vip(rf_val_pred_geo, num_features = 19, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data
+```
+
+```{r}
+# Plot the variable importance based on goodness of split (based on impurity metric) 
+# With spatial cross-validation
+vip::vip(rf_val_pred_geo_spatial, num_features = 19, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data
+```
+
+```{r}
+# Create model explainer for plotting variable importance based on permutation
+# Without spatial cross-validation
+explainer_RF <- DALEX::explain(
+  model = rf_val_pred_geo,
+  data = train.set,
+  y = as.integer (train.set$turnout),
+  label = "Random Forest",
+  verbose = FALSE
+)
+# Make an interactive dashboard
+modelStudio::modelStudio(explainer_RF)
+```
+
+```{r}
+# Create model explainer for plotting variable importance based on permutation
+# With spatial cross-validation
+explainer_RF_spatial <- DALEX::explain(
+  model = rf_val_pred_geo_spatial,
+  data = train.set,
+  y = as.integer (train.set$turnout),
+  label = "Random Forest",
+  verbose = FALSE
+)
+# Make an interactive dashboard
+modelStudio::modelStudio(explainer_RF_spatial)
+```
