@@ -77,18 +77,130 @@ plot(neighbourhood_data$geometry)
 # Explore the data distributions
 # Plot the turnout data
 turnout_plot <- ggplot(data = neighbourhood_data) +
-  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = to_rati)) +
+  geom_density(alpha=0.8, colour="black", fill="green3", aes(x = to_rati)) +
   xlab("Election turnout fraction") +
   theme_classic()
 
 # Plot the population density variable # TODO: use the actual predictors and add the other interesting ones as well
 pop_density_plot <- ggplot(data = neighbourhood_data) +
-  geom_density(alpha=0.8, colour="black", fill="green3", aes(x = bv_dc_2)) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = bv_dc_2)) +
   xlab("Population per km^2") +
   theme_classic()
 
+male_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = man)) +
+  xlab("Registered male sex fraction") +
+  theme_classic()
+
+female_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = vrouw)) +
+  xlab("Registered female sex fraction") +
+  theme_classic()
+
+p0_15_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_0_15_)) +
+  xlab("Percentage age 0-15 year") +
+  theme_classic()
+
+p15_25_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_15_25)) +
+  xlab("Percentage age 15-25 year") +
+  theme_classic()
+
+p25_45_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_25_45)) +
+  xlab("Percentage age 25-45 year") +
+  theme_classic()
+
+p45_65_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_45_65)) +
+  xlab("Percentage age 45-65 year") +
+  theme_classic()
+
+p65_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_.65_j)) +
+  xlab("Percentage age >65 year") +
+  theme_classic()
+
+p_unmarried_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_nghwd)) +
+  xlab("Percentage unmarried") +
+  theme_classic()
+
+p_married_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_gehwd)) +
+  xlab("Percentage married") +
+  theme_classic()
+
+p_divorced_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_gschd)) +
+  xlab("Percentage divorced") +
+  theme_classic()
+
+p_widow_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_vrwdw)) +
+  xlab("Percentage widow") +
+  theme_classic()
+
+p_western_imm_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_i_wst)) +
+  xlab("Percentage western immigrant") +
+  theme_classic()
+
+p_not_western_imm_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p__n_ws)) +
+  xlab("Percentage not western immigrant") +
+  theme_classic()
+
+n_company_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = antl_bd)) +
+  xlab("Number of companies") +
+  theme_classic()
+
+avg_house_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = gm_wn_w)) +
+  xlab("Average house price (*1000)") +
+  theme_classic()
+
+n_working_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = ant_nk_)) +
+  xlab("Number of income earners in household") +
+  theme_classic()
+
+avg_income_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = gm_nk__)) +
+  xlab("Average income of income earners (*1000)") +
+  theme_classic()
+
+p_low_income_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_lg_nk)) +
+  xlab("Percentage of low income households") +
+  theme_classic()
+
+p_high_income_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_hg_nk)) +
+  xlab("Percentage of high income households") +
+  theme_classic()
+
+p_aow_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = aow_utk)) +
+  xlab("Percentage of people with AOW") +
+  theme_classic()
+
+d_supermarked_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = afst__5)) +
+  xlab("Distance to closest supermarket within 5km") +
+  theme_classic() # TODO: is this and highschool one the number within 5km??
+
+d_highschool_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = vrtg__3)) +
+  xlab("Distance to closest highschool within 3km") +
+  theme_classic()
+
+# TODO: what is tot_utk? And antl_nw is not interesting for us right as we used it to determine percentages?
+
 # Show the density plots of interesting variables in a grid # TODO: may need to set how many displayed in a row and such
-plot_grid(turnout_plot, pop_density_plot, labels = "AUTO")
+plot_grid(turnout_plot, pop_density_plot, male_plot, female_plot, p0_15_plot, p15_25_plot, p25_45_plot, p45_65_plot, p65_plot, p_unmarried_plot, p_married_plot, p_divorced_plot, p_widow_plot, p_western_imm_plot, p_not_western_imm_plot, n_company_plot, avg_house_plot, n_working_plot, avg_income_plot, p_low_income_plot, p_high_income_plot, p_aow_plot, d_supermarked_plot, d_highschool_plot, labels = "AUTO")
 ```
 
 ```{r}
@@ -103,12 +215,172 @@ turnout_map <- mapview::mapview(neighbourhood_data,
 # Map interesting independent variables to compare with the spatial distribution of the independent variable # TODO add the other variables as well
 pop_density_map <- mapview::mapview(neighbourhood_data, 
                                 zcol = "bv_dc_2", 
-                                col.regions=brewer.pal(9, "YlOrRd"))
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,250,500,750,1000,2500,5000,10000))
+
+male_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "man", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.3,0.4,0.5,0.6,0.7,1.0))
+
+female_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "vrouw", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.3,0.4,0.5,0.6,0.7,1.0))
+
+age_0_15_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_0_15_", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+age_15_25_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_15_25", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+age_25_45_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_25_45", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+age_45_65_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_45_65", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+age_65_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_.65_j", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+unmarried_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_nghwd", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.3,0.4,0.5,0.6,0.7,1.0))
+
+married_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_gehwd", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.3,0.4,0.5,0.6,0.7,1.0))
+
+divorced_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_gschd", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+widow_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_vrwdw", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+western_imm_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_i_wst", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+not_western_imm_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p__n_ws", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+company_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "antl_bd", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,250,500,750,1000,2500,5000,10000))
+
+house_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "gm_wn_w", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,150,200,250,300,400,600,1000))
+
+p_income_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "ant_nk_", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,0.25,0.5,0.75,1.0,1.25,1.5,2))
+
+income_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "gm_nk__", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,20,25,30,35,40,50,100))
+
+low_income_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_lg_nk", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,0.2,0.3,0.4,0.5,0.6,0.7,1.0))
+
+high_income_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_hg_nk", 
+                                col.regions=brewer.pal(9, "YlOrRd"),
+                                at = c(0,0.2,0.3,0.4,0.5,0.6,0.7,1.0))
+
+aow_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "aow_utk", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+supermarket_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "afst__5", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,20,40,60,80,100,250))
+
+highschool_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "vrtg__3", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,20,40,60,80,100,250))
 ```
 
 ```{r}
 # Display two maps with a slider to compare the spatial distribution of the variables in all the neighborhoods # TODO: do this for combinations of all other interesting independent variables against the turnout (and maybe some relations between some of the predictor variables)
-turnout_map | pop_density_map # TODO: does work when just showing one map, but maybe due to the missing values not being in this newest data
+#turnout_map | pop_density_map # TODO: does work when just showing one map, but maybe due to the missing values not being in this newest data
+turnout_map
+
+pop_density_map
+
+male_map
+
+female_map
+
+age_0_15_map
+
+age_15_25_map
+
+age_25_45_map
+
+age_45_65_map
+
+age_65_map
+
+unmarried_map
+
+married_map
+
+divorced_map
+```
+
+```{r}
+widow_map
+
+western_imm_map
+
+not_western_imm_map
+
+company_map
+
+house_map
+
+p_income_map
+
+income_map
+
+low_income_map
+
+high_income_map
+
+aow_map
+
+supermarket_map
+
+highschool_map
 ```
 
 ## Pre-process data
@@ -152,7 +424,7 @@ print (cv_spatial_folds)
 Now the data is ready, the model recipe is defined.
 ```{r}
 # Set the equation model recipe for predicting the dependent variable turnout
-model_eq <- to_rati ~ bv_dc_2 + antl_nw + man + vrouw + p_0_15_ + p_15_25 + p_25_45 + p_45_65 + p_.65_j + p_nghwd + p_gehwd + p_gschd + p_vrwdw + p_i_wst + p__n_ws + antl_bd + gm_wn_w + ant_nk_ + gm_nk__ + p_lg_nk + p_hg_nk + aow_utk + afst__5 + vrtg__3 + tot_utk
+model_eq <- to_rati ~ bv_dc_2 + man + vrouw + p_0_15_ + p_15_25 + p_25_45 + p_45_65 + p_.65_j + p_nghwd + p_gehwd + p_gschd + p_vrwdw + p_i_wst + p__n_ws + antl_bd + gm_wn_w + ant_nk_ + gm_nk__ + p_lg_nk + p_hg_nk + aow_utk + afst__5 + vrtg__3 + tot_utk
 model_rec <- recipe(model_eq, data = train.set) %>%
   # Normalize the predictor variables using z-normalization
   step_zv(all_predictors()) %>%
@@ -181,8 +453,11 @@ bandwidth <- gwr.sel(prep(model_rec),
                 gweight = gwr.Gauss) 
 ```
 ```{r}
-# View optimum bandwidth
-bandwidth # TODO: check if this value makes sense
+# View optimum bandwidth (proportion of observations)
+bandwidth # TODO: check if this value makes sense -> is little pattern found due to the outliers of >200%? So just set all that are above 100% to 100% turnout or such?
+
+# Determine number nearest neighbourhood observations to include 
+bandwidth * nrow(neighbourhood_data)
 ```
 ```{r}
 # Train Geographically weighted regression model
@@ -660,7 +935,7 @@ rf_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% pull_workflow_fit() %>% vip
 ```{r}
 # Create model explainer for plotting variable importance based on permutation
 # Without spatial cross-validation
-predictors <- train.set %>% select(all_of(c("bv_dc_2", "antl_nw", "man", "vrouw", "p_0_15_", "p_15_25", "p_25_45", "p_45_65", "p_.65_j", "p_nghwd", "p_gehwd", "p_gschd", "p_vrwdw", "p_i_wst", "p__n_ws", "antl_bd", "gm_wn_w", "ant_nk_", "gm_nk__", "p_lg_nk", "p_hg_nk", "aow_utk", "afst__5", "vrtg__3", "tot_utk"))) 
+predictors <- train.set %>% select(all_of(c("bv_dc_2", "man", "vrouw", "p_0_15_", "p_15_25", "p_25_45", "p_45_65", "p_.65_j", "p_nghwd", "p_gehwd", "p_gschd", "p_vrwdw", "p_i_wst", "p__n_ws", "antl_bd", "gm_wn_w", "ant_nk_", "gm_nk__", "p_lg_nk", "p_hg_nk", "aow_utk", "afst__5", "vrtg__3", "tot_utk"))) 
 
 explainer_RF <- DALEXtra::explain_tidymodels(
   model = rf_val_fit_geo$.workflow[[1]],
