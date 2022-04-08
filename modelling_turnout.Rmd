@@ -849,25 +849,55 @@ lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% c
 
 ```{r}
 # Check multicollinearity with vif of car package
-lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_engine() %>% car::vif() # Without spatial cross validation
+lm_model <- lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_engine()
+lm_model %>% car::vif() # Without spatial cross validation
 ```
 
 ```{r}
 # Check multicollinearity with vif of car package
-lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() %>% car::vif() # With spatial cross validation
+lm_model_spatial <- lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+lm_model_spatial %>% car::vif() # With spatial cross validation
 ```
 
 ```{r}
-# Check spatial autocorrelation
-# Create Queen's Contiguity adjacency matrix # TODO: can also check for other weight matrices
-adjacency_nbq <- poly2nb(neighbourhood_data, queen=TRUE) #Queen's Contiguity neighborhood # TODO: now with the neighbourhoods dropped that have NA values, standard adjacency is not working anymore, so check if works when imputed else use different kind of weight matrix based on distance
-adjacency_nbq_w <- nb2listw(adjacency_nbq, style="W") #Queen's neighborhood wights
+# Check for spatial autocorrelation by first creating different kinds of weight matrixes describing neighbourhood relations
 
+# Adjacency matrix using Euclidean distance between neighbourhood centroids 
+# Because not all neighbourhoods are touching each other (not all have a turnout value), queens contiguity matrix does not work (with poly2nb function)
+neighbours <- dnearneigh(centroid_coords, 0, 50000) # Defining as adjacent all observations between 0 and 50km
+Wadj = nb2listw(neighbours, style = "W", zero.policy = TRUE) # Computing weight matrix W; style W row normalized; B non-normalized; zero.policy = TRUE means that some observations may have no adjacent neighbourhoods
+
+# Distance-based weight matrix W: 1/d (note that we're only calculating distance-based weight for "adjacent" nodes)
+dist = nbdists(neighbours,centroid_coords) # Determine distance between all neighbourhood centroids
+ids = lapply(dist, function(x) 1/(x+0.00001)) # Note that we add 0.00001 in the denominator to avoid divisions by zero, which would have occurred when a node is not considered to adjacent (thus giving 0 instead of NA as weight)
+Wids = nb2listw(neighbours, glist = ids, style = "W", zero.policy = TRUE)
+
+# Distance-based weight matrix W: 1/d^2
+ids2 = lapply(dist, function(x) 1/(x^2+0.00001))
+Wids2 = nb2listw(neighbours, glist = ids2, style = "W", zero.policy = TRUE)
+
+# Distance-based weight matrix W: exp(-x)
+expdis <- lapply(dist, function(x) {
+  tryCatch(exp(-x/50000), error = function(e) return(NULL))
+}) # Note that the exponential function is scale dependent, and consequentially the number used to normalize the distances (in this case 50km; equal to the maximum distance for adjacent units) affects W
+
+Wexpdis = nb2listw(neighbours, glist = expdis, style = "W", zero.policy = TRUE)
+```
+
+```{r}
 # Plot adjacent neighbours with line between them
-coordsW <- neighbourhood_data%>%
+coordsW <- neighbourhood_data %>%
   st_centroid()%>%
   st_geometry()
-plot(adjacency_nbq, st_geometry(coordsW), col="red") 
+plot(Wadj, st_geometry(coordsW), col="red")
+```
+
+```{r}
+# Show summary of neighbourhood adjacency
+summary(Wadj, zero.policy=TRUE) 
+
+# Print weights of first few neighbourhoods
+# print(weights(Wadj)[1:5],zero.policy=TRUE)
 ```
 
 ```{r}
@@ -880,10 +910,24 @@ plot(adjacency_nbq, st_geometry(coordsW), col="red")
 #' @param suffix (default '') suffix used for the column name with residuals of each neighbourhood (otherwise it may be overwritten when different linear regression models were trained and inspected with this function)
 #' 
 #' @return lm_res map with the residuals plotted on the neighbourhoods
-lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, n_permutations=2999, suffix=''){
+lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_data, training_data, test_predictions, n_permutations=2999, suffix=''){
   # TODO: set that 2999 to sensible number
+  # Determine the residuals for the full dataset in the same order as the neighbourhoods in the weight matrix (not only for the training data as in fit_model$residuals (due to train-test split))
+  # Compute the residuals of test data and match these with neighbourhood IDs
+  test_residuals <- cbind(test_data$ID, test_predictions$turnout_ratio - test_predictions$.pred)
+  # Match the residuals of training data with neighbourhood IDs
+  training_residuals <- cbind(training_data$ID, fit_model$residuals)
+  # Add the residuals dataframes together
+  residuals <- rbind(test_residuals, training_residuals)
+  # Add column names to residuals matrix
+  colnames(residuals) <- c("ID", "residual")
+  # Create dataframe out of residuals matrix
+  residuals_df <- data.frame(residuals)
+  # Sort the residuals based on the neighbourhood ID to get in the same order as the neighbourhoods in the weight matrix
+  residuals_ordered <- residuals_df[order(residuals_df$ID),]
+  
   # Because the moran.test function for retrieving the Moran's I is sensitive to irregularly distributed polygons, here we use a Monte Carlo method to bootstrap different polygon distribution (with moran.mc() function)
-  mc_global <- moran.mc(fit_model$residuals, weight_matrix, n_permutations, alternative="greater")
+  mc_global <- moran.mc(residuals_ordered$residual, weight_matrix, n_permutations, alternative="greater")
   
   # Plot the  Moran's I
   plot(mc_global)
@@ -892,25 +936,69 @@ lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, n_permut
   
   # Plot the residual on the neighbourhood polygons
   col_str <- paste("res_lm", suffix, sep="_") # Create column name using suffix
-  dataset[col_str] <- residuals(fit_model)
-  lm_res <- qtm(dataset, "res_lm")
-  lm_res 
+  dataset[col_str] <- residuals_ordered$residual
+  lm_res <- mapview::mapview(dataset, 
+                                zcol = col_str, 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(-5,-1,-0.5,0,0.5,1,5))
+    
+    #qtm(dataset, col_str)
   
   return (lm_res)
 }
 ```
 
 ```{r}
-# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation
-lm_res <- lm_check_autocorrelation(fit_model=lm_val_fit_geo, weight_matrix=adjacency_nbq_w, dataset=neighbourhood_data, n_permutations=2999, suffix='')
+# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using adjacency matrix
+lm_res_adj <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
 ```
 
 ```{r}
-# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation
-lm_res_spatial <- lm_check_autocorrelation(fit_model=lm_val_fit_geo_spatial, weight_matrix=adjacency_nbq_w, dataset=neighbourhood_data, n_permutations=2999, suffix='spatial')
+# Show residual plot using adjacency matrix and no spatial cross validation
+lm_res_adj
 ```
 
-For both linear regression models that are trained on a cross validation split with and without taking the spatial nature of the dataset into account, significant spatial autocorrelation in the data can be concluded.
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance matrix
+lm_res_ids <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+```
+
+```{r}
+# Show residual plot using adjacency matrix and no spatial cross validation
+lm_res_ids
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
+lm_res_ids2 <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+```
+
+```{r}
+# Show residual plot using adjacency matrix and no spatial cross validation
+lm_res_ids2
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
+lm_res_expdis <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+```
+
+```{r}
+# Show residual plot using adjacency matrix and no spatial cross validation
+lm_res_expdis
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using adjacency matrix
+lm_res_adj_spatial <- lm_check_autocorrelation(fit_model=lm_model_spatial, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial, n_permutations=2999, suffix='spatial')
+```
+
+```{r}
+# Show residual plot using adjacency matrix and with spatial cross validation
+lm_res_adj_spatial
+```
+
+For both linear regression models that are trained on a cross validation split with and without taking the spatial nature of the dataset into account, and for different weight matrices, significant spatial autocorrelation in the data can be concluded.
 
 ## Investigate non-stationarity with geographically weighted regression model
 Now the geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
@@ -938,7 +1026,8 @@ mapview::mapview(neighbourhood_data, zcol = "amb_localR2_spatial", col.regions=b
 #' @param gwr_results Data frame with results of trained Geographically Weighted Regression model. This is different for the model trained using spatial cross-validation and when spatial was not taken into account for cross-validation
 #' @param predictor String with the name of the predictor variable to create these maps for
 #' @param suffix String (default "") with a suffix for the predictor name when the coefficient and significance values are added as column to data. This can uniquely refer to the model used for training to get unique column names, e.g. "spatial".
-#'
+#' 
+#' @return list(gwr_coef, gwr_sig) list with as first element a map with coefficient values, and as second element a map with significance values of this variable
 map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
   # Determine the coefficient variability over space for all relevant predictors, after joining that with the neighbourhood polygons. This plot will now only be created and later be shown together with its predictor significance plot
   # Create column name for adding coefficient values to data
@@ -965,23 +1054,32 @@ map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
   gwr_sig <- mapview::mapview(data, zcol = pred_str_at_cat)
   
   # Compare the coefficient and significance maps of this variable
-  gwr_coef | gwr_sig
+  return(list(gwr_coef, gwr_sig))
 }
 ```
 
 ```{r}
 # TODO: get a variable that actually exists, and run this function for multiple others too
 # Without spatial cross-validation
-map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="education", suffix="")
+gwr_lst_education <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="education", suffix="")
+gwr_coef_education <- gwr_list_education[[1]]
+gwr_sig_education <- gwr_list_education[[2]]
 
 # With spatial cross-validation
-map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_spatial, predictor="education", suffix="spatial")
+gwr_lst_spatial_education <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_spatial, predictor="education", suffix="spatial")
+gwr_coef_spatial_education <- gwr_list_spatial_education[[1]]
+gwr_sig_spatial_education <- gwr_list_spatial_education[[2]]
+```
+
+```{r}
+# Compare maps of predictor coefficients and significance values # TODO: do this for others as well and may need to perhaps show this separately (without |)
+gwr_coef_education | gwr_sig_education
 ```
 
 ## Inspect important variables of random forest model
 To investigate what variables are most important for the Random Forest model to make its predictions, the feature importance is determined and plotted. This shows which variables were most important in predicting the turnout. The importance is first shown based on the impurity metric and after in an interactive model based on permutation, which is more robust. In this interactive model also the partial dependence of different variables can be explored to check their relations. Note that this can take quite a bit of time to run.
 ```{r}
-# Plot the variable importance based on goodness of split (based on impurity metric) 
+# Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # Without spatial cross-validation
 rf_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>%
 vip::vip(num_features = 20, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data 
@@ -989,39 +1087,7 @@ vip::vip(num_features = 20, idth = 0.5, aesthetics = list(fill = "purple2"), inc
 ```
 
 ```{r}
-# Plot the variable importance based on goodness of split (based on impurity metric) 
+# Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
 rf_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 19, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data
-```
-
-```{r}
-# Create model explainer for plotting variable importance based on permutation
-# Without spatial cross-validation
-predictors <- train.set %>% select(all_of(c("bev_dichth_km2", "man", "vrouw", "p_0_15_jaar", "p_15_25_jaar", "p_25_45_jaar", "p_45_65_jaar", "p_65_jaar", "p_ongehuwd", "p_gehuwd", "p_gescheiden", "p_verweduwd", "p_ia_west", "p_ia_n_west", "aantal_bedrijf", "gem_woning_waarde", "aant_ink_ont", "gem_ink_p_o", "p_laag_ink", "p_hoog_ink", "aow_uitk", "afst_levensm_5km", "voortg_ond_3km", "tot_uitkering"))) 
-
-explainer_RF <- DALEXtra::explain_tidymodels(
-  model = rf_val_fit_geo$.workflow[[1]],
-  data = predictors,
-  y = as.integer(train.set$turnout_ratio*100), # modelStudio wants integers so convert fractions to percentages
-  label = "Random Forest",
-  verbose = FALSE
-)
-
-# Make an interactive dashboard
-modelStudio::modelStudio(explainer_RF) # TODO: here is some weird error so not sure if will be possible to make an importance ranking based on permutation instead of impurity
-```
-
-
-```{r}
-# Create model explainer for plotting variable importance based on permutation
-# With spatial cross-validation
-explainer_RF_spatial <- DALEX::explain(
-  model = rf_val_pred_geo_spatial,
-  data = train.set,
-  y = as.integer (train.set$turnout),
-  label = "Random Forest",
-  verbose = FALSE
-)
-# Make an interactive dashboard
-modelStudio::modelStudio(explainer_RF_spatial)
 ```
