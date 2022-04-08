@@ -52,7 +52,7 @@ The Municipal Council election turnout in the Netherlands of 2022 has been proce
 
 ```{r}
 # Loading ShapeFile with processed data
-neighbourhood_data <- read_sf(file.path("wijk_statistics", "CBS_turnout_Wijk.shp"))
+neighbourhood_data <- read_sf(file.path("neighborhood_stats", "CBS_turnout_neighborhood.shp"))
 
 # Check the variables
 names(neighbourhood_data) # TODO: add an explanation of each variable underneath and preferably change the names to something more sensible and not such a short abbreviation
@@ -64,7 +64,8 @@ newnames <- c('ID', 'wijkcode', 'gem_naam', 'bev_dichth_km2', 'aantal_inw', 'man
              'p_0_15_jaar', 'p_15_25_jaar', 'p_25_45_jaar', 'p_45_65_jaar', 'p_65_jaar',
              'p_ongehuwd', 'p_gehuwd', 'p_gescheiden', 'p_verweduwd', 'p_ia_west', 'p_ia_n_west',
              'aantal_bedrijf', 'gem_woning_waarde', 'aant_ink_ont', 'gem_ink_p_o',
-             'p_laag_ink', 'p_hoog_ink', 'aow_uitk', 'afst_levensm_5km', 'voortg_ond_3km', 'tot_uitkering', 'turnout_ratio', 'geometry') # Note that tot_uitkering doesn't include aow_uitk, just different ones that are e.g. because of not being able to work
+             'p_laag_ink', 'p_hoog_ink', 'aow_uitk', 'afst_levensm_5km', 'voortg_ond_3km', 'tot_uitkering', 'p_adults', 'n_turnout', 
+             'turnout_ratio', 'dist_NN_voting_station', 'geometry') # Note that tot_uitkering doesn't include aow_uitk, just different ones that are e.g. because of not being able to work. Further, p_adults combines 'p_15_25_jaar', 'p_25_45_jaar', 'p_45_65_jaar', and 'p_65_jaar'. Also, n_turnout is just the raw number of people having voted in the neighbourhood
 
 names(neighbourhood_data) <- newnames
 ```
@@ -75,11 +76,24 @@ plot(neighbourhood_data$geometry)
 ```
 
 ```{r}
-# Drop variables that aren't relevant due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed)
+print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the original dataset"))
+```
+```{r}
+# Plot the neighbourhoods of original data (ones with water already removed)
+plot(neighbourhood_data$geometry) 
+```
+
+```{r}
+# Drop variables that aren't relevant due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed) # TODO: drop this and only after drop the NA valued rows!!
 
 
-# Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained TODO: remove ones without turnout and decide which variables to drop
+# Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
+# TODO: remove ones without turnout and decide which variables to drop
 neighbourhood_data <- na.omit(neighbourhood_data)
+```
+
+```{r}
+print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the dataset after the ones with missing values were removed"))
 ```
 
 ```{r}
@@ -88,7 +102,7 @@ neighbourhood_data
 ```
 
 ```{r}
-# Plot the neighbourhoods
+# Plot the neighbourhoods which will be used for analysis
 plot(neighbourhood_data$geometry) 
 ```
 
@@ -139,6 +153,11 @@ p45_65_plot <- ggplot(data = neighbourhood_data) +
 p65_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_65_jaar)) +
   xlab("Percentage age >65 year") +
+  theme_classic()
+
+p_adults_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_adults)) +
+  xlab("Percentage age >15 year") +
   theme_classic()
 
 p_unmarried_plot <- ggplot(data = neighbourhood_data) +
@@ -216,6 +235,11 @@ d_highschool_plot <- ggplot(data = neighbourhood_data) +
   xlab("Distance to closest highschool within 3km") +
   theme_classic()
 
+d_NN_voting_station_plot <- ggplot(data = neighbourhood_data) +
+  geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = dist_NN_voting_station)) +
+  xlab("Distance to nearest voting station") +
+  theme_classic()
+
 p_uitkering_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = tot_uitkering)) +
   xlab("Percentage of people with AO, WW, or algemene bijstands uitkering") +
@@ -224,7 +248,12 @@ p_uitkering_plot <- ggplot(data = neighbourhood_data) +
 # TODO: antl_nw is not interesting for us right as we used it to determine percentages?
 
 # Show the density plots of interesting variables in a grid # TODO: may need to set how many displayed in a row and such
-plot_grid(turnout_plot, pop_density_plot, male_plot, female_plot, p0_15_plot, p15_25_plot, p25_45_plot, p45_65_plot, p65_plot, p_unmarried_plot, p_married_plot, p_divorced_plot, p_widow_plot, p_western_imm_plot, p_not_western_imm_plot, n_company_plot, avg_house_plot, n_working_plot, avg_income_plot, p_low_income_plot, p_high_income_plot, p_aow_plot, d_supermarked_plot, d_highschool_plot, labels = "AUTO")
+plot_grid(turnout_plot, pop_density_plot, male_plot, female_plot, p0_15_plot, p15_25_plot, p25_45_plot, p45_65_plot, p65_plot, labels = "AUTO")
+
+plot_grid(p_adults_plot, p_unmarried_plot, p_married_plot, p_divorced_plot, p_widow_plot, p_western_imm_plot, p_not_western_imm_plot, n_company_plot, avg_house_plot, labels = "AUTO")
+
+plot_grid(n_working_plot, avg_income_plot, p_low_income_plot, p_high_income_plot, p_aow_plot, p_uitkering_plot, d_supermarked_plot, d_highschool_plot, d_NN_voting_station_plot, labels = "AUTO")
+
 ```
 
 ```{r}
@@ -274,6 +303,11 @@ age_65_map <- mapview::mapview(neighbourhood_data,
                                 zcol = "p_65_jaar", 
                                 col.regions=brewer.pal(8, "YlOrRd"),
                                 at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+age_adults_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "p_adults", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,0.3,0.4,0.5,0.6,0.7,1.0))
 
 unmarried_map <- mapview::mapview(neighbourhood_data, 
                                 zcol = "p_ongehuwd", 
@@ -354,6 +388,11 @@ uitkering_map <- mapview::mapview(neighbourhood_data,
                                 zcol = "tot_uitkering", 
                                 col.regions=brewer.pal(8, "YlOrRd"),
                                 at = c(0,0.1,0.2,0.3,0.4,0.5,1.0))
+
+d_NN_voting_station_map <- mapview::mapview(neighbourhood_data, 
+                                zcol = "dist_NN_voting_station", 
+                                col.regions=brewer.pal(8, "YlOrRd"),
+                                at = c(0,250,500,750,1000,2000,5000))
 ```
 
 ```{r}
@@ -376,6 +415,8 @@ age_25_45_map
 age_45_65_map
 
 age_65_map
+
+age_adults_map
 
 unmarried_map
 
@@ -405,9 +446,13 @@ high_income_map
 
 aow_map
 
+uitkering_map
+
 supermarket_map
 
 highschool_map
+
+d_NN_voting_station_map
 ```
 
 ## Pre-process data
@@ -451,7 +496,7 @@ print (cv_spatial_folds)
 Now the data is ready, the model recipe is defined.
 ```{r}
 # Set the equation model recipe for predicting the dependent variable turnout
-model_eq <- turnout_ratio ~ bev_dichth_km2 + man + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + gem_ink_p_o + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering
+model_eq <- turnout_ratio ~ bev_dichth_km2 + man + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + gem_ink_p_o + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
 model_rec <- recipe(model_eq, data = train.set) %>%
   # Normalize the predictor variables using z-normalization
   step_zv(all_predictors()) %>%
