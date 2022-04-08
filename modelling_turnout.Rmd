@@ -55,7 +55,7 @@ The Municipal Council election turnout in the Netherlands of 2022 has been proce
 neighbourhood_data <- read_sf(file.path("neighborhood_stats", "CBS_turnout_neighborhood.shp"))
 
 # Check the variables
-names(neighbourhood_data) # TODO: add an explanation of each variable underneath and preferably change the names to something more sensible and not such a short abbreviation
+names(neighbourhood_data)
 ```
 
 ```{r}
@@ -65,10 +65,46 @@ newnames <- c('ID', 'wijkcode', 'gem_naam', 'bev_dichth_km2', 'aantal_inw', 'man
              'p_ongehuwd', 'p_gehuwd', 'p_gescheiden', 'p_verweduwd', 'p_ia_west', 'p_ia_n_west',
              'aantal_bedrijf', 'gem_woning_waarde', 'aant_ink_ont', 'gem_ink_p_o',
              'p_laag_ink', 'p_hoog_ink', 'aow_uitk', 'afst_levensm_5km', 'voortg_ond_3km', 'tot_uitkering', 'p_adults', 'n_turnout', 
-             'turnout_ratio', 'dist_NN_voting_station', 'geometry') # Note that tot_uitkering doesn't include aow_uitk, just different ones that are e.g. because of not being able to work. Further, p_adults combines 'p_15_25_jaar', 'p_25_45_jaar', 'p_45_65_jaar', and 'p_65_jaar'. Also, n_turnout is just the raw number of people having voted in the neighbourhood
+             'turnout_ratio', 'dist_NN_voting_station', 'geometry') 
 
 names(neighbourhood_data) <- newnames
 ```
+
+For each neighbourhood these variables can be described as follows:
+* ID : unique id 
+* wijkcode : unique neighbourhood code of CBS
+* gem_naam : name of municipality the neighbourhood belongs to
+* bev_dichth_km2 : number of residents per km^2
+* aantal_inw : number of residents
+* man : percentage of residents registered as being male sex
+* vrouw : percentage of residents registered as being female sex
+* p_0_15_jaar : percentage of residents between 0 and 15 year
+* p_15_25_jaar : percentage of residents between 15 and 25 year
+* p_25_45_jaar : percentage of residents between 25 and 45 year
+* p_45_65_jaar : percentage of residents between 45 and 65 year
+* p_65_jaar : percentage of residents older than 65 year
+* p_ongehuwd : percentage of residents who aren't married
+* p_gehuwd : percentage of residents who are married
+* p_gescheiden : percentage of residents who are divorced
+* p_verweduwd : percentage of residents who are widowed
+* p_ia_west : percentage of residents who have a western immigrant background
+* p_ia_n_west : percentage of residents who have a non-western immigrant background
+* aantal_bedrijf : number of companies
+* gem_woning_waarde : average house value
+* aant_ink_ont : average number of income earners per household
+* gem_ink_p_o : average income per income earner
+* p_laag_ink : percentage of residents with a low income
+* p_hoog_ink : percentage of residents with a high income
+* aow_uitk : percentage of residents with an AOW uitkering
+* afst_levensm_5km : minimum distance (in meters) to supermarket within 5km range
+* voortg_ond_3km : minimum distance (in meters) to highschool within 3km range
+* tot_uitkering : percentage of residents with an AO, WW, or algemene bijstands uitkering
+* p_adults : percentage of residents older than 18 year, which is a combination of p_15_25_jaar, p_25_45_jaar, p_45_65_jaar, and p_65_jaar where 70% of p_15_25_jaar is taken into account (so assumed uniform distribution over ages in that range)
+* n_turnout : number of registered votes
+* turnout_ratio : fraction of registered votes compared to number of residents who are allowed to vote, so n_turnout / p_adults
+* dist_NN_voting_station : minimum distance (in meters) to closest voting station from centroid of neighbourhood
+* geometry : spatial geometry 
+
 
 ```{r}
 # Plot the full dataset
@@ -77,33 +113,6 @@ plot(neighbourhood_data$geometry)
 
 ```{r}
 print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the original dataset"))
-```
-```{r}
-# Plot the neighbourhoods of original data (ones with water already removed)
-plot(neighbourhood_data$geometry) 
-```
-
-```{r}
-# Drop variables that aren't relevant due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed) # TODO: drop this and only after drop the NA valued rows!!
-
-
-# Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
-# TODO: remove ones without turnout and decide which variables to drop
-neighbourhood_data <- na.omit(neighbourhood_data)
-```
-
-```{r}
-print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the dataset after the ones with missing values were removed"))
-```
-
-```{r}
-# Show data preview
-neighbourhood_data 
-```
-
-```{r}
-# Plot the neighbourhoods which will be used for analysis
-plot(neighbourhood_data$geometry) 
 ```
 
 ```{r}
@@ -157,7 +166,7 @@ p65_plot <- ggplot(data = neighbourhood_data) +
 
 p_adults_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = p_adults)) +
-  xlab("Percentage age >15 year") +
+  xlab("Percentage adults (age >18 year)") +
   theme_classic()
 
 p_unmarried_plot <- ggplot(data = neighbourhood_data) +
@@ -227,17 +236,17 @@ p_aow_plot <- ggplot(data = neighbourhood_data) +
 
 d_supermarked_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = afst_levensm_5km)) +
-  xlab("Distance to closest supermarket within 5km") +
-  theme_classic() # TODO: is this and highschool one the number within 5km??
+  xlab("Distance (in meters) to closest supermarket within 5km") +
+  theme_classic() 
 
 d_highschool_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = voortg_ond_3km)) +
-  xlab("Distance to closest highschool within 3km") +
+  xlab("Distance (in meters) to closest highschool within 3km") +
   theme_classic()
 
 d_NN_voting_station_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = dist_NN_voting_station)) +
-  xlab("Distance to nearest voting station") +
+  xlab("Distance (in meters) to nearest voting station") +
   theme_classic()
 
 p_uitkering_plot <- ggplot(data = neighbourhood_data) +
@@ -245,9 +254,8 @@ p_uitkering_plot <- ggplot(data = neighbourhood_data) +
   xlab("Percentage of people with AO, WW, or algemene bijstands uitkering") +
   theme_classic()
 
-# TODO: antl_nw is not interesting for us right as we used it to determine percentages?
 
-# Show the density plots of interesting variables in a grid # TODO: may need to set how many displayed in a row and such
+# Show the density plots of interesting variables in a grid 
 plot_grid(turnout_plot, pop_density_plot, male_plot, female_plot, p0_15_plot, p15_25_plot, p25_45_plot, p45_65_plot, p65_plot, labels = "AUTO")
 
 plot_grid(p_adults_plot, p_unmarried_plot, p_married_plot, p_divorced_plot, p_widow_plot, p_western_imm_plot, p_not_western_imm_plot, n_company_plot, avg_house_plot, labels = "AUTO")
@@ -263,7 +271,7 @@ turnout_map <- mapview::mapview(neighbourhood_data,
                                 col.regions=brewer.pal(9, "YlOrRd"),
                                 at = c(0,0.2,0.4,0.6,0.8,1,1.5,2)) # TODO: for other vars also check if I need to set/change some values for the ranges as outliers make the ranges too broad so all same colour in map
 
-# Map interesting independent variables to compare with the spatial distribution of the independent variable # TODO add the other variables as well
+# Map interesting independent variables to compare with the spatial distribution of the independent variable 
 pop_density_map <- mapview::mapview(neighbourhood_data, 
                                 zcol = "bev_dichth_km2", 
                                 col.regions=brewer.pal(9, "YlOrRd"),
@@ -396,8 +404,7 @@ d_NN_voting_station_map <- mapview::mapview(neighbourhood_data,
 ```
 
 ```{r}
-# Display two maps with a slider to compare the spatial distribution of the variables in all the neighborhoods # TODO: do this for combinations of all other interesting independent variables against the turnout (and maybe some relations between some of the predictor variables)
-#turnout_map | pop_density_map # TODO: does work when just showing one map, but maybe due to the missing values not being in this newest data
+# Display two maps with a slider to compare the spatial distribution of the variables in all the neighborhoods
 turnout_map
 
 pop_density_map
@@ -455,6 +462,39 @@ highschool_map
 d_NN_voting_station_map
 ```
 
+```{r}
+# Plot the neighbourhoods of original data (ones with water already removed)
+plot(neighbourhood_data$geometry) 
+```
+
+```{r}
+# Drop variables that aren't relevant, e.g. due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed) 
+# Drop aantal_inw and n_turnout because it aren't ratios (used to compute these instead), gem_ink_p_o due to almost 50% missing values (and high correlation with p_laag_ink and p_hoog_ink), man due to high correlation with vrouw as CBS assumes binary sex
+# TODO: drop more after checking multicollinearity further, e.g. keep p_adults and drop age groups, drop aow or over 65, merge some marriage values or only keep p_gehuwd
+# TODO: remove these also from recipes
+neighbourhood_data <- subset(neighbourhood_data, select=-c(aantal_inw, n_turnout, gem_ink_p_o, man))
+
+# Set a maximum value for variables to tackle outliers for more robust training # TODO: do this for all relevant variables, and if its final density plot or spatial distribution map will be used in report, then compute those again too (like done above, but maybe with automatic range determining in maps) 
+neighbourhood_data$turnout_ratio <- ifelse(neighbourhood_data$turnout_ratio<=1, neighbourhood_data$turnout_ratio, 1)
+
+# Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
+neighbourhood_data <- na.omit(neighbourhood_data)
+```
+
+```{r}
+print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the dataset after the ones with missing values were removed"))
+```
+
+```{r}
+# Show data preview
+neighbourhood_data 
+```
+
+```{r}
+# Plot the neighbourhoods which will be used for analysis
+plot(neighbourhood_data$geometry) 
+```
+
 ## Pre-process data
 Pre-process the data by creating a training and test dataset, normalizing the variables, and creating a model recipe with the model equation. Additionally,  cross validation splits will be created with one taking into account spatial coordinates and the other one not, to check for difference in tuned parameters and model performance.
 
@@ -462,13 +502,11 @@ Pre-process the data by creating a training and test dataset, normalizing the va
 # Set seed for reproducible results
 set.seed(123)
 
-# TODO: potentially drop geometry column if exists and needed (was just for easy handling in the model they said)
-
 # Determine coordinates of neighbourhood centroids to split on with spatial cross validation
 centroid_coords <- st_coordinates(st_centroid(neighbourhood_data$geometry))
 # Need to get integers instead of doubles, and add to dataframe
 neighbourhood_data$X_centroid <- centroid_coords[,c("X")]
-neighbourhood_data$Y_centroid <- centroid_coords[,c("Y")] # TODO: is this in the end still used??
+neighbourhood_data$Y_centroid <- centroid_coords[,c("Y")] 
 
 # Split the data into a training (75%) and test (25%) set using stratification on the dependent variable (turnout) to have a representative test sample
 data_split <- rsample::initial_split(neighbourhood_data, strata = "turnout_ratio", prop = 0.75)
@@ -495,18 +533,62 @@ print (cv_spatial_folds)
 
 Now the data is ready, the model recipe is defined.
 ```{r}
-# Set the equation model recipe for predicting the dependent variable turnout
-model_eq <- turnout_ratio ~ bev_dichth_km2 + man + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + gem_ink_p_o + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
-model_rec <- recipe(model_eq, data = train.set) %>%
-  # Normalize the predictor variables using z-normalization
-  step_zv(all_predictors()) %>%
-  # Centralize some predictors # TODO: example did this only for some
-  step_center(all_predictors()) %>%
-  # Scale predictors with large values # TODO: example did this only for some
-  step_scale(all_predictors())
+# Set the equation of the model recipe for predicting the dependent variable turnout
+# All predictor variables
+model_eq_all <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
 
-# Inspect the final recipe by first preparing and then juicing it using glimpse, which shows the model structure for some samples
-glimpse(model_rec %>% prep() %>% juice())
+# Socio-economic variables
+model_eq_economic <- turnout_ratio ~ gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + tot_uitkering
+
+# Socio-demographic variables
+model_eq_demographic <- turnout_ratio ~ vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + p_adults
+
+# Spatial location variables
+model_eq_location <- turnout_ratio ~ bev_dichth_km2 + aantal_bedrijf +  afst_levensm_5km + voortg_ond_3km + dist_NN_voting_station
+
+# Composite of most promising variables # TODO: determine all of these equations, make recipes of them and train all models for each
+model_eq_final <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
+```
+
+```{r}
+#' Create tidymodels model recipe from equation and include training dataset. This function also normalizes, centralizes, and scales the predictor variables, and inspects the final recipe
+#' 
+#' @param model_eq formula of the model that has to be trained
+#' @param training_data training dataset that will be used for fitting the models
+#' 
+#' @return model_rec final tidymodels model recipe
+create_recipe <- function(model_eq, training_data){
+  model_rec <- recipe(model_eq, data = training_data) %>%
+    # Normalize the predictor variables using z-normalization
+    step_zv(all_predictors()) %>%
+    # Centralize some predictors 
+    step_center(all_predictors()) %>%
+    # Scale predictors with large values 
+    step_scale(all_predictors())
+  
+  # Inspect the final recipe by first preparing and then juicing it using glimpse, which shows the model structure for some samples
+  glimpse(model_rec %>% prep() %>% juice())
+  
+  return (model_rec)
+}
+```
+
+```{r}
+# Create model recipes
+# All predictor variables
+model_rec_all <- create_recipe(model_eq=model_eq_all, training_data=train.set)
+
+# Socio-economic variables
+model_rec_economic <- create_recipe(model_eq=model_eq_economic, training_data=train.set)
+
+# Socio-demographic variables
+model_rec_demographic <- create_recipe(model_eq=model_eq_demographic, training_data=train.set)
+
+# Spatial location variables
+model_rec_location <- create_recipe(model_eq=model_eq_location, training_data=train.set)
+
+# Composite of most promising variables
+model_rec_final <- create_recipe(model_eq=model_eq_final, training_data=train.set)
 ```
 
 ## Set up workflows for training models
@@ -517,17 +599,23 @@ Create the model workflows which will be used for training and predicting differ
 #' This can't be done using the tidymodels package like the Linear regression and Random forest will use afterwards
 #'
 #' @param data Dataset with observations to fit
-#' @param model_recipe tidymodels recipe describing the equation to determine relations for
+#' @param model_equation formula of the model that has to be trained
 #' @param weight_func gwr weight function to use for the adaptive kernel (default gwr.Gauss)
 #' 
 #' @return (gwr_model, k_NN) the trained GWR model and the number of nearest neighbourhoods to consider in the adaptive kernel
-train_GWR <- function(data, model_recipe, weight_func=gwr.Gauss){
-  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects
-  data_sp <- as_Spatial(data)
+train_GWR <- function(data, model_equation, weight_func=gwr.Gauss){
+  # Use the create recipe function on the full dataset (instead of only training data as with other models) to normalize, center and scale the predictors for more robust training
+  model_rec <- create_recipe(model_eq = model_equation, training_data = data)
+  prepared_data <- juice(prep(model_rec))
+  
+  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects # Instead of as_Spatial (which somehow doesn't work on prepared_data) can also supply coords (the coordinates of centroids here) # TODO: change this or keep it
+  #data_sp <- as_Spatial(prepared_data)
+  data_sp <- prepared_data
   
   # Select optimal bandwidth for adaptive kernel (so k nearest neighbourhoods)
-  bandwidth <- gwr.sel(prep(model_recipe), 
+  bandwidth <- gwr.sel(model_equation, 
                 data = data_sp,
+                coords = cbind(data$X_centroid, data$Y_centroid),
                 longlat = TRUE, # TODO: may be that we need to change CRS to WG84 from RD New
                 adapt = TRUE, 
                 gweight = weight_func) # TODO: change to bivariate likely to not let neighbourhoods further away count as much, and also make spatial lag model
@@ -537,7 +625,7 @@ train_GWR <- function(data, model_recipe, weight_func=gwr.Gauss){
   print(paste("Adaptive kernel with number of nearest neighbourhoods: ", k_NN, " of total number of neighbourhoods: ", nrow(data)))
   
   # Train Geographically weighted regression model
-  gwr_model <- gwr(prep(model_recipe), data = data_sp, longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, bandwidth = bandwidth)
+  gwr_model <- gwr(model_equation, data = data_sp, coords = cbind(data$X_centroid, data$Y_centroid), longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, bandwidth = bandwidth)
   
   # Show summary of Geographically weighted regression model
   gwr_model
@@ -547,12 +635,10 @@ train_GWR <- function(data, model_recipe, weight_func=gwr.Gauss){
 ```
 
 ```{r}
-# TODO: fix that GWR works and the RMSE and such can still be plotted/ AIC determined (for the tidymodelsand perhaps also this one likely with glance function from broom library https://broom.tidymodels.org/articles/broom.html) 
 # TODO: fix errors that are due to having too many variables to fit on too little data by training for just social factors (and gotten rid of multicolineary factors)
-# TODO: possible also add a SGWR model to allow some variables to be stationary and hence reducing model complexity
-gwr_model <- train_GWR(data=neighbourhood_data, model_recipe=model_rec, weight_func=gwr.Gauss)
+# TODO: possible also add a SGWR and spatial lag/error model to allow some variables to be stationary and hence reducing model complexity
+gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.Gauss)
 ```
-
 
 ```{r}
 # Create the model plans, indicating which types of models to fit and what hyperparameters to tune
@@ -573,10 +659,10 @@ rf_plan <- parsnip::rand_forest() %>%
 
 For the hyperparameters that are set to be tuned above, set up the grid search combinations to use for tuning. 
 ```{r}
-# Use the expansion option for setting the grids # TODO: decide on which option to select
+# Use the expansion option for setting the grids
 # Random forest grid
 rf_grid <- expand.grid (mtry = c(3,6,9), 
-                       min_n = c(100,500,800)) # TODO: set this based on how many neighbourhoods we have
+                       min_n = c(100,500,800)) # TODO: set min_n based on how many neighbourhoods and mtry based on number of variables we have
 ```
 
 ## Determine the best tuned hyperparameters and corresponding models
@@ -729,8 +815,6 @@ ggplot(data = OOF_preds %>%
 ```
 
 ```{r}
-# TODO: could also plot MAPE
-
 # Plot predicted versus the observed values for each model in scatter plots
 ggplot(OOF_preds, aes(y=.pred , x = turnout_ratio,group = model)) + 
   geom_point(alpha = 0.3) +
@@ -863,7 +947,6 @@ ggplot(data = val_preds %>%
 ```
 
 ```{r}
-# TODO: could also plot MAPE and absE, and possibly calculate the AIC heuristic, and may be nice to make a ROC curve
 # TODO: may want to change xlim to make better visible
 
 # Plot predicted versus the observed values for each model in scatter plots
@@ -882,6 +965,7 @@ As can be seen, like with the performance on training data, the different models
 
 ## Check for spatial autocorrelation with linear regression model
 Check if the assumptions of final trained linear regression model hold using this dataset (likely not), by investigating multicollinearity and spatial autocorrelation.
+
 ```{r}
 # Check assumptions of linear regression like multicollinearity, which occurs when the predictor variables actually predict one another, and due to correlation some predictor variables may also be redundant
 # Information from: https://jhudatascience.org/tidyversecourse/model.html 5.14.1.4 and https://cran.r-project.org/web/packages/performance/performance.pdf
@@ -902,6 +986,22 @@ lm_model %>% car::vif() # Without spatial cross validation
 # Check multicollinearity with vif of car package
 lm_model_spatial <- lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() 
 lm_model_spatial %>% car::vif() # With spatial cross validation
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+tidy(lm_model)
+augment(lm_model)
+glance(lm_model)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+tidy(lm_model_spatial)
+augment(lm_model_spatial)
+glance(lm_model_spatial)
 ```
 
 ```{r}
@@ -955,8 +1055,7 @@ summary(Wadj, zero.policy=TRUE)
 #' @param suffix (default '') suffix used for the column name with residuals of each neighbourhood (otherwise it may be overwritten when different linear regression models were trained and inspected with this function)
 #' 
 #' @return lm_res map with the residuals plotted on the neighbourhoods
-lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_data, training_data, test_predictions, n_permutations=2999, suffix=''){
-  # TODO: set that 2999 to sensible number
+lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_data, training_data, test_predictions, n_permutations=1000, suffix=''){
   # Determine the residuals for the full dataset in the same order as the neighbourhoods in the weight matrix (not only for the training data as in fit_model$residuals (due to train-test split))
   # Compute the residuals of test data and match these with neighbourhood IDs
   test_residuals <- cbind(test_data$ID, test_predictions$turnout_ratio - test_predictions$.pred)
@@ -995,7 +1094,7 @@ lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_dat
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using adjacency matrix
-lm_res_adj <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+lm_res_adj <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
 ```
 
 ```{r}
@@ -1005,7 +1104,7 @@ lm_res_adj
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance matrix
-lm_res_ids <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+lm_res_ids <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
 ```
 
 ```{r}
@@ -1015,7 +1114,7 @@ lm_res_ids
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_ids2 <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+lm_res_ids2 <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
 ```
 
 ```{r}
@@ -1025,7 +1124,7 @@ lm_res_ids2
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_expdis <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=2999, suffix='')
+lm_res_expdis <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
 ```
 
 ```{r}
@@ -1035,7 +1134,7 @@ lm_res_expdis
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using adjacency matrix
-lm_res_adj_spatial <- lm_check_autocorrelation(fit_model=lm_model_spatial, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial, n_permutations=2999, suffix='spatial')
+lm_res_adj_spatial <- lm_check_autocorrelation(fit_model=lm_model_spatial, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial, n_permutations=1000, suffix='spatial')
 ```
 
 ```{r}
@@ -1047,21 +1146,21 @@ For both linear regression models that are trained on a cross validation split w
 
 ## Investigate non-stationarity with geographically weighted regression model
 Now the geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
+
+```{r}
+# Print results of model with model statistics
+gwr_model
+```
+
 ```{r}
 # Put the Geographically Weighted Regression with adaptive kernel results in data frame
-gwr_out <- as.data.frame(gwr_val_fit_geo$SDF) # Without spatial cross-validation
-gwr_out_spatial <- as.data.frame(gwr_val_fit_geo_spatial$SDF) # With spatial cross-validation
+gwr_out <- as.data.frame(gwr_model$SDF) 
 ```
 
 ```{r}
 # Join the local R2 for each GWR model to each neighborhood and display its distribution
-# Without spatial cross-validation
 neighbourhood_data$amb_localR2 <- gwr_out$localR2
 mapview::mapview(neighbourhood_data, zcol = "amb_localR2", col.regions=brewer.pal(11, "RdYlGn")) 
-
-# With spatial cross-validation
-neighbourhood_data$amb_localR2_spatial <- gwr_out_spatial$localR2
-mapview::mapview(neighbourhood_data, zcol = "amb_localR2_spatial", col.regions=brewer.pal(11, "RdYlGn")) 
 ```
 
 ```{r}
@@ -1104,31 +1203,43 @@ map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
 ```
 
 ```{r}
-# TODO: get a variable that actually exists, and run this function for multiple others too
-# Without spatial cross-validation
-gwr_lst_education <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="education", suffix="")
-gwr_coef_education <- gwr_list_education[[1]]
-gwr_sig_education <- gwr_list_education[[2]]
-
-# With spatial cross-validation
-gwr_lst_spatial_education <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_spatial, predictor="education", suffix="spatial")
-gwr_coef_spatial_education <- gwr_list_spatial_education[[1]]
-gwr_sig_spatial_education <- gwr_list_spatial_education[[2]]
+# TODO: get a variable that actually exists in the recipe the model is trained on, and run this function for multiple others too
+gwr_lst_female <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="vrouw", suffix="")
+gwr_coef_female <- gwr_list_female[[1]]
+gwr_sig_female <- gwr_list_female[[2]]
 ```
 
 ```{r}
 # Compare maps of predictor coefficients and significance values # TODO: do this for others as well and may need to perhaps show this separately (without |)
-gwr_coef_education | gwr_sig_education
+gwr_coef_female | gwr_sig_female
 ```
 
 ## Inspect important variables of random forest model
 To investigate what variables are most important for the Random Forest model to make its predictions, the feature importance is determined and plotted. This shows which variables were most important in predicting the turnout. The importance is first shown based on the impurity metric and after in an interactive model based on permutation, which is more robust. In this interactive model also the partial dependence of different variables can be explored to check their relations. Note that this can take quite a bit of time to run.
+
+```{r}
+# Inspect more model statistics 
+# Without spatial cross validation
+rf_model <- lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model)
+augment(rf_model)
+glance(rf_model)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+rf_model_spatial <- lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_spatial)
+augment(rf_model_spatial)
+glance(rf_model_spatial)
+```
+
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # Without spatial cross-validation
 rf_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>%
 vip::vip(num_features = 20, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data 
-# TODO: run also check_metrics()
 ```
 
 ```{r}
