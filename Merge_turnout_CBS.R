@@ -12,6 +12,9 @@ rm(list=ls())
 
 # Load Turn-out data
 turnout = read.csv('data/turnout_per_station_XY.csv')
+turnout_point <- st_as_sf(turnout, coords = c("X", "Y"), crs = 28992)
+turnout_point <- turnout_point[,"Zipcode"]
+
 turnout = turnout %>% 
   group_by(Zipcode) %>% 
   summarise(Invited = sum(Invited),
@@ -29,19 +32,15 @@ turnout = turnout %>%
   summarise(Invited = sum(Invited),
             Turnout = sum(Turnout))
 
-turnout[, 'to_ratio'] = turnout$Turnout / turnout$Invited
 turnout[, "Wijk2020"] = as.numeric(turnout$Wijk2020)
-
-turnout = mutate(turnout, to_ratio = ifelse((to_ratio == Inf | to_ratio > 10), NA, to_ratio))
-
-turnout <- turnout[,c('Wijk2020', 'to_ratio')]
+turnout <- turnout[,c('Wijk2020', 'Turnout')]
 
 ######################################3
 wijk <- read_sf('data/wijken_2019.shp')
-features <- c(1,4,9:21,31:32,45,47,78:79,81:82,87:90,129,164)
+features <- c(1,6,6,9:21,31:32,45,47,78:79,81:82,87:90,129,164)
 wijk <- wijk[,features]
 
-newnames <- c('wijkcode', 'gem_naam', 'bev_dichth_km2', 'aantal_inw', 'man', 'vrouw', 
+newnames <- c('wijkcode', 'Water', 'gem_naam', 'bev_dichth_km2', 'aantal_inw', 'man', 'vrouw', 
              'p_0_15_jaar', 'p_15_25_jaar', 'p_25_45_jaar', 'p_45_65_jaar', 'p_>65_jaar',
              'p_ongehuwd', 'p_gehuwd', 'p_gescheid', 'p_verweduwd', 'p_ia_west', 'p_ia_n_west',
              'aantal_bedr', 'gem_won_waarde', 'aant_ink_ont', 'gem_ink_p_o',
@@ -49,6 +48,10 @@ newnames <- c('wijkcode', 'gem_naam', 'bev_dichth_km2', 'aantal_inw', 'man', 'vr
              'aow_uitk', 'afst_levensm_5km', 'voortg_ond_3km', 'geometry')
 
 names(wijk) <- newnames
+
+# filter water out of the dataset
+wijk <- wijk[wijk$Water == 'NEE',]
+wijk <- wijk[names(wijk) != 'Water']
 
 # manipulate Wijkcode
 wijk[, "wijkcode"] <- gsub('WK','', wijk$wijkcode)
@@ -81,24 +84,53 @@ wijkdata[wijkdata$aantal_inw == 0 & !is.na(wijkdata$aantal_inw), 'aantal_inw'] <
 cols_to_ratio <- c('man','vrouw','aant_ink_ont','aow_uitk','tot_uitk')
 wijkdata[cols_to_ratio] <- wijkdata[cols_to_ratio]/wijkdata$aantal_inw
 
+# Calculate adults
+# assumption of 18 year old
+wijkdata[,"abs_15_25_jaar"] <- (wijkdata$p_15_25_jaar*wijkdata$aantal_inw)*0.7
+wijkdata[,"abs_25_45_jaar"] <- wijkdata$p_25_45_jaar*wijkdata$aantal_inw
+wijkdata[,"abs_45_65_jaar"] <- wijkdata$p_45_65_jaar*wijkdata$aantal_inw
+wijkdata[,"abs_>65_jaar"] <- wijkdata$`p_>65_jaar`*wijkdata$aantal_inw
+
+wijkdata[,'adults'] <- wijkdata$abs_15_25_jaar + wijkdata$abs_25_45_jaar + wijkdata$abs_45_65_jaar + wijkdata$`abs_>65_jaar`
+wijkdata[,'adults'] <- round(wijkdata$adults, digits = 0) 
+
+dropcols = c('abs_15_25_jaar','abs_25_45_jaar', 'abs_45_65_jaar', 'abs_>65_jaar')
+wijkdata <- wijkdata[!names(wijkdata) %in% dropcols]
 # Merge turnout percentage with the wijkdata
 wijkdata <- left_join(wijkdata, turnout, by = c('wijkcode'='Wijk2020'))
 
-# Merge data with 
+# Caldulate turnout ratios
+wijkdata[,'to_ratio'] <- round(wijkdata$Turnout/wijkdata$adults, digits = 3)
+
+# calculate distance to nearest voting station
+# calculate centroids
+wijk_centroids <- st_centroid(wijkgeo)
+
+# order on ID
+wijk_centroids <- wijk_centroids[order(wijk_centroids$ID),]
+
+# Caculate disntance matrix
+m_dist <- st_distance(wijk_centroids$geometry, turnout_point$geometry)
+# Calculate minimul distance to polling station
+nn_voting_stat <- apply(m_dist, 1, FUN = min, na.rm = TRUE)
+
+# bind rows again, but first arrange
+wijkdata <- wijkdata[order(wijkdata$ID),]
+wijkdata <- cbind(wijkdata, nn_voting_stat)
+
+# Merge data with location
 wijk_final <- merge(wijkdata, wijkgeo)
 wijk_final <- st_as_sf(wijk_final)
 
+# Write data
 st_write(wijk_final, 'CBS_turnout_Wijk.shp')
 
 # map turnout 
 tmap_mode('plot')
 tm_shape(wijk_final)+
-  tm_fill('to_ratio', 
-          breaks = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1,Inf),
-          style = "fixed",
-          textNA = "No data",
-          colorNA = "white", 
-          palette = "Reds")
+  tm_fill('nn_voting_stat',
+          breaks = c(0,1000,2000,3000,4000,5000, Inf),
+          pallete = 'Greens')
 
 #####################################
 missing.values <- wijkdata %>%
@@ -110,22 +142,15 @@ missing.values <- wijkdata %>%
   summarise(num.isna = n()) %>%
   mutate(pct = num.isna / total * 100)
 
-levels <-
-  (missing.values  %>% filter(isna == T) %>% arrange(desc(pct)))$key
+levels <- (missing.values  %>% filter(isna == T) %>% arrange(desc(pct)))$key
 
 percentage.plot <- missing.values %>%
   ggplot() +
-  geom_bar(aes(x = reorder(key, desc(pct)), 
-               y = pct, fill=isna), 
-           stat = 'identity', alpha=0.8) +
+  geom_bar(aes(x = reorder(key, desc(pct)), y = pct, fill=isna), stat = 'identity', alpha=0.8) +
   scale_x_discrete(limits = levels) +
-  scale_fill_manual(name = "", 
-                    values = c('steelblue', 'tomato3'), labels = c("Present", "Missing")) +
+  scale_fill_manual(name = "",  values = c('steelblue', 'tomato3'), labels = c("Present", "Missing")) +
   coord_flip() +
-  labs(title = "Percentage of missing values", 
-       x = 'Variable', y = "% of missing values")
-
-percentage.plot
+  labs(title = "Percentage of missing values", x = 'Variable', y = "% of missing values")
 
 row.plot <- wijkdata %>%
   mutate(id = row_number()) %>%
@@ -133,15 +158,10 @@ row.plot <- wijkdata %>%
   mutate(isna = is.na(val)) %>%
   ggplot(aes(key, id, fill = isna)) +
   geom_raster(alpha=0.8) +
-  scale_fill_manual(name = "",
-                    values = c('steelblue', 'tomato3'),
-                    labels = c("Present", "Missing")) +
+  scale_fill_manual(name = "", values = c('steelblue', 'tomato3'), labels = c("Present", "Missing")) +
   scale_x_discrete(limits = levels) +
-  labs(x = "Variable",
-       y = "Row Number", title = "Missing values in rows") +
+  labs(x = "Variable", y = "Row Number", title = "Missing values in rows") +
   coord_flip()
-
-row.plot
 
 patchwork::wrap_plots(row.plot, percentage.plot)
 
