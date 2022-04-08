@@ -1051,10 +1051,10 @@ summary(Wadj, zero.policy=TRUE)
 #' @param fit_model final fit of linear regression model
 #' @param weight_matrix weight matrix stating the neighbourhood relations to take into account
 #' @param dataset full neighbourhood dataset
-#' @param n_permutations (default 2999) number of permutations for Monte Carlo method to bootstrap different polygon distribution
+#' @param n_permutations (default 1000) number of permutations for Monte Carlo method to bootstrap different polygon distribution
 #' @param suffix (default '') suffix used for the column name with residuals of each neighbourhood (otherwise it may be overwritten when different linear regression models were trained and inspected with this function)
 #' 
-#' @return lm_res map with the residuals plotted on the neighbourhoods
+#' @return list(mc_global, lm_res) list with as first element the Moran's I, and as second element a map with the residuals plotted on the neighbourhoods
 lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_data, training_data, test_predictions, n_permutations=1000, suffix=''){
   # Determine the residuals for the full dataset in the same order as the neighbourhoods in the weight matrix (not only for the training data as in fit_model$residuals (due to train-test split))
   # Compute the residuals of test data and match these with neighbourhood IDs
@@ -1074,27 +1074,23 @@ lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_dat
   mc_global <- moran.mc(residuals_ordered$residual, weight_matrix, n_permutations, alternative="greater")
   
   # Plot the  Moran's I
-  plot(mc_global)
+  plot(mc_global) 
   
   print(mc_global) # When the p value is significant we reject the null hypothesis that there is no significant autocorrelations among the variable, and accept that, the residual has spatial clustering
   
   # Plot the residual on the neighbourhood polygons
   col_str <- paste("res_lm", suffix, sep="_") # Create column name using suffix
-  dataset[col_str] <- residuals_ordered$residual
-  lm_res <- mapview::mapview(dataset, 
-                                zcol = col_str, 
-                                col.regions=brewer.pal(8, "YlOrRd"),
-                                at = c(-5,-1,-0.5,0,0.5,1,5))
-    
-    #qtm(dataset, col_str)
+  lm_res <- qtm(dataset, col_str)
   
-  return (lm_res)
+  return (list(mc_global, lm_res))
 }
 ```
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using adjacency matrix
-lm_res_adj <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_adj_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_adj_moran <- lm_res_adj_lst[[1]]
+lm_res_adj <- lm_res_adj_lst[[2]]
 ```
 
 ```{r}
@@ -1104,7 +1100,9 @@ lm_res_adj
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance matrix
-lm_res_ids <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_ids_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_ids_moran <- lm_res_ids_lst[[1]]
+lm_res_ids <- lm_res_ids_lst[[2]]
 ```
 
 ```{r}
@@ -1114,7 +1112,9 @@ lm_res_ids
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_ids2 <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_ids2_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_ids2_moran <- lm_res_ids2_lst[[1]]
+lm_res_ids2 <- lm_res_ids2_lst[[2]]
 ```
 
 ```{r}
@@ -1124,7 +1124,9 @@ lm_res_ids2
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_expdis <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_expdis_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
+lm_res_expdis_moran <- lm_res_expdis_lst[[1]]
+lm_res_expdis <- lm_res_expdis_lst[[2]]
 ```
 
 ```{r}
@@ -1143,6 +1145,71 @@ lm_res_adj_spatial
 ```
 
 For both linear regression models that are trained on a cross validation split with and without taking the spatial nature of the dataset into account, and for different weight matrices, significant spatial autocorrelation in the data can be concluded.
+
+## Testing spatial lag and error models 
+Using the weight matrices defined in the previous section, try to tackle spatial autocorrelation using spatial lag and error models. These don't take into account spatial non-stationarity, which will be accounted for in a Geographically weighted regression model.
+
+```{r}
+#' Estimate a Spatial error or lag model using a pre-defined weight matrix, and determine the spatial autocorrelation using Monte Carlo method for Moran's Index
+#' 
+#' @param model_equation formula of the model that has to be trained
+#' @param data dataset with observations to fit
+#' @param weight_matrix weight matrix defining neighbourhood relations
+#' @param model_str string stating if a spatial error model ('error', the default value) should be trained or a spatial lag model ('lag')
+#' @param n_permutations (default 1000) number of permutations for Monte Carlo method to bootstrap different polygon distribution
+#' @param suffix (default '') suffix used for the column name with residuals of each neighbourhood (otherwise it may be overwritten when different spatial error models were trained and inspected with this function)
+#' 
+#' @return list(error_model, mc_global, error_res) list with as first element the trained spatial error model, as second element the Moran's I, and as third element a map with the residuals plotted on their neighbourhoods
+estimate_error_lag_model <- function(model_equation, data, weight_matrix, model_str='error', n_permutations=1000, suffix=''){
+    # Use the create recipe function on the full dataset (instead of only training data as with other models) to normalize, center and scale the predictors for more robust training
+  model_rec <- create_recipe(model_eq = model_equation, training_data = data)
+  prepared_data <- juice(prep(model_rec))
+  
+  # TODO: if this model should actually first be trained on only training data then use code of below
+  # # Retrieve model equation from recipe
+  # model_eq <- formula(prep(model_recipe))
+  # 
+  # # Retrieve the prepared data from the model recipe, which already  normalized, centered and scaled the predictors for more robust training
+  # prepared_data <- juice(prep(model_recipe))
+  
+  # Estimate Spatial error or lag model with weight matrix
+  if (model_str=='error'){
+    model <- errorsarlm(model_equation, data=prepared_data, listw=weight_matrix, zero.policy=TRUE)
+  }
+  else if (model_str=='lag'){
+    model <- lagsarlm(model_equation, data=prepared_data, listw=weight_matrix, zero.policy=TRUE)
+  }
+
+  # Because the moran.test function for retrieving the Moran's I is sensitive to irregularly distributed polygons, here we use a Monte Carlo method to bootstrap different polygon distribution (with moran.mc() function)
+  mc_global <- moran.mc(model$residuals, weight_matrix, n_permutations, alternative="greater") # When the p value is significant we reject the null hypothesis that there is no significant autocorrelations among the variable, and accept that, the residual has spatial clustering
+  plot(mc_global)
+  
+  # Plot the residual on the neighbourhood polygons
+  col_str <- paste("res", suffix, sep="_") # Create column name using suffix
+  data[col_str] <- model$residuals
+  residuals <- qtm(data, col_str)
+  
+  return (list(model, mc_global, residuals))
+}
+```
+
+```{r}
+# Estimate spatial error model with inverse distance matrix
+# Socio-economic predictors
+error_model_economic_ids_lst <- estimate_error_lag_model(model_equation=model_eq_economic, data=neighbourhood_data, weight_matrix=Wids, model_str='error', n_permutations=1000, suffix='economic_ids')
+error_model_economic_ids <- error_model_economic_ids_lst[[1]]
+error_model_economic_ids_moran <- error_model_economic_ids_lst[[2]]
+error_model_economic_ids_res <- error_model_economic_ids_lst[[3]]
+
+# Inspect model
+summary(error_model_economic_ids)
+
+# Describe Moran's I
+print(error_model_economic_ids_moran)
+
+# Plot autocorrelation
+error_model_economic_ids_res # TODO show error residuals map
+```
 
 ## Investigate non-stationarity with geographically weighted regression model
 Now the geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
