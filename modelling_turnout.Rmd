@@ -635,9 +635,9 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss){
 ```
 
 ```{r}
-# TODO: fix errors that are due to having too many variables to fit on too little data by training for just social factors (and gotten rid of multicolineary factors)
+# TODO: fix errors that are due to having too many variables to fit on too little data by training for just social factors (and gotten rid of multicolineary factors) --> on smaller equation still doesn't work (for Gaussian weight), likely due to multicollinearity and some predictors not having scaled the outliers to a maximum value (this is done for turnout already though), so remove those predictors and scale outliers
 # TODO: possible also add a SGWR and spatial lag/error model to allow some variables to be stationary and hence reducing model complexity
-gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.Gauss)
+gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.bisquare)#gwr.Gauss)
 ```
 
 ```{r}
