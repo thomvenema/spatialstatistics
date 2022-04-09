@@ -600,10 +600,11 @@ Create the model workflows which will be used for training and predicting differ
 #'
 #' @param data Dataset with observations to fit
 #' @param model_equation formula of the model that has to be trained
-#' @param weight_func gwr weight function to use for the adaptive kernel (default gwr.Gauss)
+#' @param weight_func gwr weight function to use for the adaptive kernel (default gwr.Gauss, but other option is for example gwr.bisquare)
+#' @param bandwidth the fraction of neighbourhoods to consider for an adaptive kernel (default NULL: an optimal value will be determined using cross validation)
 #' 
 #' @return (gwr_model, k_NN) the trained GWR model and the number of nearest neighbourhoods to consider in the adaptive kernel
-train_GWR <- function(data, model_equation, weight_func=gwr.Gauss){
+train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NULL){
   # Use the create recipe function on the full dataset (instead of only training data as with other models) to normalize, center and scale the predictors for more robust training
   model_rec <- create_recipe(model_eq = model_equation, training_data = data)
   prepared_data <- juice(prep(model_rec))
@@ -613,12 +614,14 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss){
   data_sp <- prepared_data
   
   # Select optimal bandwidth for adaptive kernel (so k nearest neighbourhoods)
-  bandwidth <- gwr.sel(model_equation, 
+  if (is.null(bandwidth)){
+    bandwidth <- gwr.sel(model_equation, 
                 data = data_sp,
                 coords = cbind(data$X_centroid, data$Y_centroid),
                 longlat = TRUE, # TODO: may be that we need to change CRS to WG84 from RD New
                 adapt = TRUE, 
                 gweight = weight_func) # TODO: change to bivariate likely to not let neighbourhoods further away count as much, and also make spatial lag model
+  }
   
   # Determine number nearest neighbourhood observations to include 
   k_NN <- bandwidth * nrow(data)
