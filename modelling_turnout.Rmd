@@ -470,12 +470,33 @@ plot(neighbourhood_data$geometry)
 ```{r}
 # Drop variables that aren't relevant, e.g. due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed) 
 # Drop aantal_inw and n_turnout because it aren't ratios (used to compute these instead), gem_ink_p_o due to almost 50% missing values (and high correlation with p_laag_ink and p_hoog_ink), man due to high correlation with vrouw as CBS assumes binary sex
-# TODO: drop more after checking multicollinearity further, e.g. keep p_adults and drop age groups, drop aow or over 65, merge some marriage values or only keep p_gehuwd
+# Further, due to multicollinearity (high VIF after running linear regression) drop the following predictors: p_verweduwd, p_ongehuwd, p_gehuwd (correlation maybe with an age group),
+# afst_levensm_5km (correlation maybe with population density), p_hoog_ink (insignificant in lm and correlation maybe with gem_woning_waarde), p_adults (correlation with other age groups),
+# p_aow (correlation with 65+ age group)
 # TODO: remove these also from recipes
 neighbourhood_data <- subset(neighbourhood_data, select=-c(aantal_inw, n_turnout, gem_ink_p_o, man))
 
-# Set a maximum value for variables to tackle outliers for more robust training # TODO: do this for all relevant variables, and if its final density plot or spatial distribution map will be used in report, then compute those again too (like done above, but maybe with automatic range determining in maps) 
+# Set a maximum value for variables to tackle outliers for more robust training
+# This is based on the density plots
+# TODO: do this for all relevant variables, and if its final density plot or spatial distribution map will be used in report, then compute those again too (like done above, but maybe with automatic range determining in maps) 
 neighbourhood_data$turnout_ratio <- ifelse(neighbourhood_data$turnout_ratio<=1, neighbourhood_data$turnout_ratio, 1)
+neighbourhood_data$bev_dichth_km2 <- ifelse(neighbourhood_data$bev_dichth_km2<=7500, neighbourhood_data$bev_dichth_km2, 7500)
+neighbourhood_data$vrouw <- ifelse(neighbourhood_data$vrouw<=0.6, neighbourhood_data$vrouw, 0.6)
+neighbourhood_data$p_0_15_jaar <- ifelse(neighbourhood_data$p_0_15_jaar<=0.3, neighbourhood_data$p_0_15_jaar, 0.3)
+neighbourhood_data$p_15_25_jaar <- ifelse(neighbourhood_data$p_15_25_jaar<=0.3, neighbourhood_data$p_15_25_jaar, 0.3)
+neighbourhood_data$p_25_45_jaar <- ifelse(neighbourhood_data$p_25_45_jaar<=0.4, neighbourhood_data$p_25_45_jaar, 0.4)
+neighbourhood_data$p_45_65_jaar <- ifelse(neighbourhood_data$p_45_65_jaar<=0.4, neighbourhood_data$p_45_65_jaar, 0.4)
+neighbourhood_data$p_65_jaar <- ifelse(neighbourhood_data$p_65_jaar <=0.3, neighbourhood_data$p_65_jaar, 0.3)
+neighbourhood_data$p_gescheiden <- ifelse(neighbourhood_data$p_gescheiden<=0.2, neighbourhood_data$p_gescheiden, 0.2)
+neighbourhood_data$p_ia_west <- ifelse(neighbourhood_data$p_ia_west<=0.2, neighbourhood_data$p_ia_west, 0.2)
+neighbourhood_data$p_ia_n_west <- ifelse(neighbourhood_data$p_ia_n_west<=0.2, neighbourhood_data$p_ia_n_west, 0.2)
+neighbourhood_data$aantal_bedrijf <- ifelse(neighbourhood_data$aantal_bedrijf<=2000, neighbourhood_data$aantal_bedrijf, 2000)
+neighbourhood_data$gem_woning_waarde <- ifelse(neighbourhood_data$gem_woning_waarde<=500, neighbourhood_data$gem_woning_waarde, 500)
+neighbourhood_data$aant_ink_ont <- ifelse(neighbourhood_data$aant_ink_ont<=1,neighbourhood_data$aant_ink_ont, 1)
+neighbourhood_data$p_laag_ink <- ifelse(neighbourhood_data$p_laag_ink<=0.6, neighbourhood_data$p_laag_ink, 0.6)
+neighbourhood_data$tot_uitkering <- ifelse(neighbourhood_data$tot_uitkering<=0.2, neighbourhood_data$tot_uitkering, 0.2)
+neighbourhood_data$voortg_ond_3km <- ifelse(neighbourhood_data$voortg_ond_3km<=30, neighbourhood_data$voortg_ond_3km, 30)
+neighbourhood_data$dist_NN_voting_station <- ifelse(neighbourhood_data$dist_NN_voting_station<=2500, neighbourhood_data$dist_NN_voting_station, 2500)
 
 # Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
 neighbourhood_data <- na.omit(neighbourhood_data)
@@ -547,7 +568,7 @@ model_eq_demographic <- turnout_ratio ~ vrouw + p_0_15_jaar + p_15_25_jaar + p_2
 model_eq_location <- turnout_ratio ~ bev_dichth_km2 + aantal_bedrijf +  afst_levensm_5km + voortg_ond_3km + dist_NN_voting_station
 
 # Composite of most promising variables # TODO: determine all of these equations, make recipes of them and train all models for each
-model_eq_final <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
+model_eq_final <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_gescheiden + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + voortg_ond_3km + dist_NN_voting_station
 ```
 
 ```{r}
@@ -605,20 +626,14 @@ Create the model workflows which will be used for training and predicting differ
 #' 
 #' @return (gwr_model, k_NN) the trained GWR model and the number of nearest neighbourhoods to consider in the adaptive kernel
 train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NULL){
-  # Use the create recipe function on the full dataset (instead of only training data as with other models) to normalize, center and scale the predictors for more robust training
-  model_rec <- create_recipe(model_eq = model_equation, training_data = data)
-  prepared_data <- juice(prep(model_rec))
-  
-  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects # Instead of as_Spatial (which somehow doesn't work on prepared_data) can also supply coords (the coordinates of centroids here) # TODO: change this or keep it
-  #data_sp <- as_Spatial(prepared_data)
-  data_sp <- prepared_data
+  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects # TODO Instead of as_Spatial (which somehow doesn't work on prepared_data) can also supply coords (the coordinates of centroids here) 
+  data <- as_Spatial(data)
   
   # Select optimal bandwidth for adaptive kernel (so k nearest neighbourhoods)
   if (is.null(bandwidth)){
     bandwidth <- gwr.sel(model_equation, 
-                data = data_sp,
-                coords = cbind(data$X_centroid, data$Y_centroid),
-                longlat = TRUE, # TODO: may be that we need to change CRS to WG84 from RD New
+                data = data,
+                longlat = TRUE, 
                 adapt = TRUE, 
                 gweight = weight_func) # TODO: change to bivariate likely to not let neighbourhoods further away count as much, and also make spatial lag model
   }
@@ -628,7 +643,8 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
   print(paste("Adaptive kernel with number of nearest neighbourhoods: ", k_NN, " of total number of neighbourhoods: ", nrow(data)))
   
   # Train Geographically weighted regression model
-  gwr_model <- gwr(model_equation, data = data_sp, coords = cbind(data$X_centroid, data$Y_centroid), longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, bandwidth = bandwidth)
+  gwr_model <- gwr(model_equation, data = data,
+                   longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, adapt=bandwidth)#bandwidth = bandwidth) # TODO: bandwidth parameter is for fixed kernel, adapt for adaptive (was the whole problem)
   
   # Show summary of Geographically weighted regression model
   gwr_model
@@ -640,7 +656,7 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
 ```{r}
 # TODO: fix errors that are due to having too many variables to fit on too little data by training for just social factors (and gotten rid of multicolineary factors) --> on smaller equation still doesn't work (for Gaussian weight), likely due to multicollinearity and some predictors not having scaled the outliers to a maximum value (this is done for turnout already though), so remove those predictors and scale outliers
 # TODO: possible also add a SGWR and spatial lag/error model to allow some variables to be stationary and hence reducing model complexity
-gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.bisquare)#gwr.Gauss)
+gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_all, weight_func=gwr.Gauss, bandwidth=NULL)
 ```
 
 ```{r}
@@ -1230,7 +1246,7 @@ gwr_out <- as.data.frame(gwr_model$SDF)
 ```{r}
 # Join the local R2 for each GWR model to each neighborhood and display its distribution
 neighbourhood_data$amb_localR2 <- gwr_out$localR2
-mapview::mapview(neighbourhood_data, zcol = "amb_localR2", col.regions=brewer.pal(11, "RdYlGn")) 
+mapview::mapview(neighbourhood_data, zcol = "amb_localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 ```
 
 ```{r}
@@ -1257,12 +1273,12 @@ map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
   pred_str_at <- paste("at", predictor, sep="_")
   pred_str_at_cat <- paste(pred_str_at, "cat", sep="_")
   # Estimate the t-value for variable 
-  data$at_Green_avail = gwr_results[,predictor] / gwr_results[,pred_str_se]
+  t_pred <- gwr_results[,predictor] / gwr_results[,pred_str_se]
   # Categorize the t-value to statistical significance
-  data[pred_str_at_cat] <- cut(data[,pred_str_at],
-                                    breaks=c(min(data[,pred_str_at]),
+  data[pred_str_at_cat] <- cut(t_pred,
+                                    breaks=c(min(t_pred),
                                              -1.96, 1.96,
-                                             max(data[,pred_str_at])),
+                                             max(t_pred)),
                                     labels=c("sig","nonsig", "sig"))
   # Make plot of the variable significance 
   gwr_sig <- mapview::mapview(data, zcol = pred_str_at_cat)
@@ -1273,15 +1289,20 @@ map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
 ```
 
 ```{r}
+min(gwr_out[,"gem_woning_waarde_se"])
+```
+
+```{r}
 # TODO: get a variable that actually exists in the recipe the model is trained on, and run this function for multiple others too
-gwr_lst_female <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="vrouw", suffix="")
-gwr_coef_female <- gwr_list_female[[1]]
-gwr_sig_female <- gwr_list_female[[2]]
+gwr_lst_female <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="gem_woning_waarde", suffix="")
+gwr_coef_female <- gwr_lst_female[[1]]
+gwr_sig_female <- gwr_lst_female[[2]]
 ```
 
 ```{r}
 # Compare maps of predictor coefficients and significance values # TODO: do this for others as well and may need to perhaps show this separately (without |)
-gwr_coef_female | gwr_sig_female
+gwr_coef_female 
+gwr_sig_female
 ```
 
 ## Inspect important variables of random forest model
