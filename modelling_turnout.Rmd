@@ -470,15 +470,11 @@ plot(neighbourhood_data$geometry)
 ```{r}
 # Drop variables that aren't relevant, e.g. due to multicollinearity with another variable or due to many missing values (which can't be reliably imputed) 
 # Drop aantal_inw and n_turnout because it aren't ratios (used to compute these instead), gem_ink_p_o due to almost 50% missing values (and high correlation with p_laag_ink and p_hoog_ink), man due to high correlation with vrouw as CBS assumes binary sex
-# Further, due to multicollinearity (high VIF after running linear regression) drop the following predictors: p_verweduwd, p_ongehuwd, p_gehuwd (correlation maybe with an age group),
-# afst_levensm_5km (correlation maybe with population density), p_hoog_ink (insignificant in lm and correlation maybe with gem_woning_waarde), p_adults (correlation with other age groups),
-# p_aow (correlation with 65+ age group)
-# TODO: remove these also from recipes
-neighbourhood_data <- subset(neighbourhood_data, select=-c(aantal_inw, n_turnout, gem_ink_p_o, man))
+# Further, due to multicollinearity (high VIF after running linear regression sequentially after dropping another high VIF variable: done in another R notebook) drop the following predictors: p_verweduwd, p_ongehuwd, p_gehuwd (correlation maybe with an age group), afst_levensm_5km (correlation maybe with population density), p_hoog_ink (insignificant in lm and correlation maybe with gem_woning_waarde), p_adults (correlation with other age groups), p_aow (correlation with 65+ age group and hence with other age groups), p_65_jaar (correlation probably with other age groups because when it isn't one of the others, then will be this one), tot_uitkering (correlation maybe with low income)
+neighbourhood_data <- subset(neighbourhood_data, select=-c(aantal_inw, n_turnout, gem_ink_p_o, man, p_verweduwd, p_ongehuwd, p_gehuwd, afst_levensm_5km, p_hoog_ink, p_adults, aow_uitk, p_65_jaar, tot_uitkering))
 
 # Set a maximum value for variables to tackle outliers for more robust training
 # This is based on the density plots
-# TODO: do this for all relevant variables, and if its final density plot or spatial distribution map will be used in report, then compute those again too (like done above, but maybe with automatic range determining in maps) 
 neighbourhood_data$turnout_ratio <- ifelse(neighbourhood_data$turnout_ratio<=1, neighbourhood_data$turnout_ratio, 1)
 neighbourhood_data$bev_dichth_km2 <- ifelse(neighbourhood_data$bev_dichth_km2<=7500, neighbourhood_data$bev_dichth_km2, 7500)
 neighbourhood_data$vrouw <- ifelse(neighbourhood_data$vrouw<=0.6, neighbourhood_data$vrouw, 0.6)
@@ -486,7 +482,6 @@ neighbourhood_data$p_0_15_jaar <- ifelse(neighbourhood_data$p_0_15_jaar<=0.3, ne
 neighbourhood_data$p_15_25_jaar <- ifelse(neighbourhood_data$p_15_25_jaar<=0.3, neighbourhood_data$p_15_25_jaar, 0.3)
 neighbourhood_data$p_25_45_jaar <- ifelse(neighbourhood_data$p_25_45_jaar<=0.4, neighbourhood_data$p_25_45_jaar, 0.4)
 neighbourhood_data$p_45_65_jaar <- ifelse(neighbourhood_data$p_45_65_jaar<=0.4, neighbourhood_data$p_45_65_jaar, 0.4)
-neighbourhood_data$p_65_jaar <- ifelse(neighbourhood_data$p_65_jaar <=0.3, neighbourhood_data$p_65_jaar, 0.3)
 neighbourhood_data$p_gescheiden <- ifelse(neighbourhood_data$p_gescheiden<=0.2, neighbourhood_data$p_gescheiden, 0.2)
 neighbourhood_data$p_ia_west <- ifelse(neighbourhood_data$p_ia_west<=0.2, neighbourhood_data$p_ia_west, 0.2)
 neighbourhood_data$p_ia_n_west <- ifelse(neighbourhood_data$p_ia_n_west<=0.2, neighbourhood_data$p_ia_n_west, 0.2)
@@ -494,11 +489,10 @@ neighbourhood_data$aantal_bedrijf <- ifelse(neighbourhood_data$aantal_bedrijf<=2
 neighbourhood_data$gem_woning_waarde <- ifelse(neighbourhood_data$gem_woning_waarde<=500, neighbourhood_data$gem_woning_waarde, 500)
 neighbourhood_data$aant_ink_ont <- ifelse(neighbourhood_data$aant_ink_ont<=1,neighbourhood_data$aant_ink_ont, 1)
 neighbourhood_data$p_laag_ink <- ifelse(neighbourhood_data$p_laag_ink<=0.6, neighbourhood_data$p_laag_ink, 0.6)
-neighbourhood_data$tot_uitkering <- ifelse(neighbourhood_data$tot_uitkering<=0.2, neighbourhood_data$tot_uitkering, 0.2)
 neighbourhood_data$voortg_ond_3km <- ifelse(neighbourhood_data$voortg_ond_3km<=30, neighbourhood_data$voortg_ond_3km, 30)
 neighbourhood_data$dist_NN_voting_station <- ifelse(neighbourhood_data$dist_NN_voting_station<=2500, neighbourhood_data$dist_NN_voting_station, 2500)
 
-# Drop rows that contain one or multiple NA value(S) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
+# Drop rows that contain one or multiple NA value(s) because otherwise the models can't be trained (e.g. neighbourhoods in which wasn't voted due to no municipal elections, or no polling station there, or missing value in a predictor variable which would be biased when imputed) 
 neighbourhood_data <- na.omit(neighbourhood_data)
 ```
 
@@ -555,17 +549,14 @@ print (cv_spatial_folds)
 Now the data is ready, the model recipe is defined.
 ```{r}
 # Set the equation of the model recipe for predicting the dependent variable turnout
-# All predictor variables
-model_eq_all <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + afst_levensm_5km + voortg_ond_3km + tot_uitkering + p_adults + dist_NN_voting_station
-
 # Socio-economic variables
-model_eq_economic <- turnout_ratio ~ gem_woning_waarde + aant_ink_ont + p_laag_ink + p_hoog_ink + aow_uitk + tot_uitkering
+model_eq_economic <- turnout_ratio ~ gem_woning_waarde + aant_ink_ont + p_laag_ink 
 
 # Socio-demographic variables
-model_eq_demographic <- turnout_ratio ~ vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_65_jaar + p_ongehuwd + p_gehuwd + p_gescheiden + p_verweduwd + p_ia_west + p_ia_n_west + p_adults
+model_eq_demographic <- turnout_ratio ~ vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_gescheiden + p_ia_west + p_ia_n_west
 
 # Spatial location variables
-model_eq_location <- turnout_ratio ~ bev_dichth_km2 + aantal_bedrijf +  afst_levensm_5km + voortg_ond_3km + dist_NN_voting_station
+model_eq_location <- turnout_ratio ~ bev_dichth_km2 + aantal_bedrijf + voortg_ond_3km + dist_NN_voting_station
 
 # Composite of most promising variables # TODO: determine all of these equations, make recipes of them and train all models for each
 model_eq_final <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_gescheiden + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + voortg_ond_3km + dist_NN_voting_station
@@ -596,9 +587,6 @@ create_recipe <- function(model_eq, training_data){
 
 ```{r}
 # Create model recipes
-# All predictor variables
-model_rec_all <- create_recipe(model_eq=model_eq_all, training_data=train.set)
-
 # Socio-economic variables
 model_rec_economic <- create_recipe(model_eq=model_eq_economic, training_data=train.set)
 
@@ -611,9 +599,8 @@ model_rec_location <- create_recipe(model_eq=model_eq_location, training_data=tr
 # Composite of most promising variables
 model_rec_final <- create_recipe(model_eq=model_eq_final, training_data=train.set)
 ```
-
-## Set up workflows for training models
-Create the model workflows which will be used for training and predicting different models using the recipe, and set up grid search with a cross validation process for hyperparameter tuning. This then results in the final, optimal models to employ. Below first the model plans are created for linear regression, geographically weighted regression, and random forest models.
+## Train Geographically weighted regression model
+Train Geographically weighted regression model with adaptive kernel using each of the described functions from above. For this need to take all data instead of only training data because the learned formula for one neighbourhood is not generalisable to other neighbourhoods.
 
 ```{r}
 #' Train Geographically Weighted Regression (GWR) model with an adaptive kernel.
@@ -644,7 +631,7 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
   
   # Train Geographically weighted regression model
   gwr_model <- gwr(model_equation, data = data,
-                   longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, adapt=bandwidth)#bandwidth = bandwidth) # TODO: bandwidth parameter is for fixed kernel, adapt for adaptive (was the whole problem)
+                   longlat = TRUE, gweight = weight_func, hatmatrix=TRUE, se.fit=TRUE, adapt=bandwidth)
   
   # Show summary of Geographically weighted regression model
   gwr_model
@@ -654,10 +641,32 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
 ```
 
 ```{r}
-# TODO: fix errors that are due to having too many variables to fit on too little data by training for just social factors (and gotten rid of multicolineary factors) --> on smaller equation still doesn't work (for Gaussian weight), likely due to multicollinearity and some predictors not having scaled the outliers to a maximum value (this is done for turnout already though), so remove those predictors and scale outliers
-# TODO: possible also add a SGWR and spatial lag/error model to allow some variables to be stationary and hence reducing model complexity
-gwr_model <- train_GWR(data=neighbourhood_data, model_equation=model_eq_all, weight_func=gwr.Gauss, bandwidth=NULL)
+# Train model for each equation using different weight functions
+# Final formula with all predictors that don't have multicollinearity
+gwr_final_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_final, weight_func=gwr.Gauss, bandwidth=NULL)
+gwr_final_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_final, weight_func=gwr.bisquare, bandwidth=NULL)
 ```
+
+```{r}
+# Socio-economic
+gwr_economic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.Gauss, bandwidth=NULL)
+gwr_economic_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.bisquare, bandwidth=NULL)
+```
+
+```{r}
+# Socio-demographic
+gwr_demographic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_demographic, weight_func=gwr.Gauss, bandwidth=NULL)
+gwr_demographic_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_demographic, weight_func=gwr.bisquare, bandwidth=NULL)
+```
+
+```{r}
+# Spatial location
+gwr_location_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_location, weight_func=gwr.Gauss, bandwidth=NULL)
+gwr_location_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_location, weight_func=gwr.bisquare, bandwidth=NULL)
+```
+
+## Set up workflows for training linear regression and random forest models
+Create the model workflows which will be used for training and predicting different models using the recipe, and set up grid search with a cross validation process for hyperparameter tuning. This then results in the final, optimal models to employ. Below first the model plans are created for linear regression, geographically weighted regression, and random forest models.
 
 ```{r}
 # Create the model plans, indicating which types of models to fit and what hyperparameters to tune
@@ -684,7 +693,7 @@ rf_grid <- expand.grid (mtry = c(3,6,9),
                        min_n = c(100,500,800)) # TODO: set min_n based on how many neighbourhoods and mtry based on number of variables we have
 ```
 
-## Determine the best tuned hyperparameters and corresponding models
+## Determine the best tuned hyperparameters and corresponding linear regression and random forest models
 Now we can create the workflow for training the models to match the model recipe with the model plans. The created workflows are then used to tune the models to their grids to be able to extract the optimal hyperparameters and their corresponding models. This is done using the cross validation datasets. Extract the best hyperparameters from each above tuned models and their corresponding optimal models based on their training performance.
 
 ```{r}
@@ -723,7 +732,7 @@ lm_cross_validation <- function(lm_plan, model_recipe, cv_folds){
 
 ```{r}
 # Use cross validation to determine the best linear regression model
-lm_lst <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec, cv_folds=cv_splits)
+lm_lst <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_splits)
 
 lm_best_params <- lm_lst[[1]]
 lm_best_OOF_preds <- lm_lst[[2]]
@@ -732,7 +741,7 @@ lm_best_wf <- lm_lst[[3]]
 
 ```{r}
 # Use spatial cross validation to determine the best linear regression model
-lm_lst_spatial <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec, cv_folds=cv_spatial_folds)
+lm_lst_spatial <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
 
 lm_best_params_spatial <- lm_lst_spatial[[1]]
 lm_best_OOF_preds_spatial <- lm_lst_spatial[[2]]
@@ -752,7 +761,7 @@ rf_cross_validation <- function(rf_plan, rf_grid, model_recipe, cv_folds){
   # Set model workflows
   rf_wf <-
   workflows::workflow() %>% 
-  add_recipe(model_rec) %>% 
+  add_recipe(model_recipe) %>% 
   add_model(rf_plan)
   
   # Tune model hyperparameters
@@ -777,7 +786,7 @@ rf_cross_validation <- function(rf_plan, rf_grid, model_recipe, cv_folds){
 
 ```{r}
 # Use cross validation to determine the best random forest model
-rf_lst <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec, cv_folds=cv_splits)
+rf_lst <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_splits)
 
 rf_best_params <- rf_lst[[1]]
 rf_best_OOF_preds <- rf_lst[[2]]
@@ -786,7 +795,7 @@ rf_best_wf <- rf_lst[[3]]
 
 ```{r}
 # Use spatial cross validation to determine the best random forest model
-rf_lst_spatial <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec, cv_folds=cv_spatial_folds)
+rf_lst_spatial <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
 
 rf_best_params_spatial <- rf_lst_spatial[[1]]
 rf_best_OOF_preds_spatial <- rf_lst_spatial[[2]]
@@ -849,7 +858,7 @@ ggplot(OOF_preds, aes(y=.pred , x = turnout_ratio,group = model)) +
 
 As can be seen, the different models predict differently and have varying level of training errors.
 
-## Evaluate models on test data
+## Evaluate linear regression and random forest models on test data
 To check how well the models generalise to unseen data, the predictions are made for the test data and corresponding errors are determined. For this the models with best parameters are first fit with the full training dataset and not only cross validation folds.
 
 ```{r}
@@ -1230,27 +1239,80 @@ print(error_model_economic_ids_moran)
 error_model_economic_ids_res # TODO show error residuals map
 ```
 
-## Investigate non-stationarity with geographically weighted regression model
-Now the geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
+## Investigate non-stationarity with Geographically weighted regression model
+Now the Geographically weighted regression models are trained, it is interesting to inspect the local patterns that have been found. For this purpose map the coefficients of interesting predictor variables and compare this to a map of the significance of this variable. 
 
 ```{r}
 # Print results of model with model statistics
-gwr_model
+# Composite of most promising variables 
+gwr_final_gauss
+gwr_final_bisquare
+
+# Socio-economic variables
+gwr_economic_gauss
+gwr_economic_bisquare
+
+# Socio-demographic variables
+gwr_demographic_gauss
+gwr_demographic_bisquare
+
+# Spatial location variables
+gwr_location_gauss
+gwr_location_bisquare
 ```
 
 ```{r}
 # Put the Geographically Weighted Regression with adaptive kernel results in data frame
-gwr_out <- as.data.frame(gwr_model$SDF) 
+# Composite of most promising variables 
+gwr_out_final_gauss <- as.data.frame(gwr_final_gauss$SDF)
+gwr_out_final_bisquare <- as.data.frame(gwr_final_bisquare$SDF)
+
+# Socio-economic variables
+gwr_out_economic_gauss <- as.data.frame(gwr_economic_gauss$SDF)
+gwr_out_economic_bisquare <- as.data.frame(gwr_economic_bisquare$SDF)
+
+# Socio-demographic variables
+gwr_out_demographic_gauss <- as.data.frame(gwr_demographic_gauss$SDF)
+gwr_out_demographic_bisquare <- as.data.frame(gwr_demographic_bisquare$SDF)
+
+# Spatial location variables
+gwr_out_location_gauss <- as.data.frame(gwr_location_gauss$SDF)
+gwr_out_location_bisquare <- as.data.frame(gwr_location_bisquare$SDF)
 ```
 
 ```{r}
 # Join the local R2 for each GWR model to each neighborhood and display its distribution
-neighbourhood_data$amb_localR2 <- gwr_out$localR2
-mapview::mapview(neighbourhood_data, zcol = "amb_localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+# Composite of most promising variables 
+neighbourhood_data$localR2 <- gwr_out_final_gauss$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+neighbourhood_data$localR2 <- gwr_out_final_bisquare$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+# Socio-economic variables
+neighbourhood_data$localR2 <- gwr_out_economic_gauss$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+neighbourhood_data$localR2 <- gwr_out_economic_bisquare$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+# Socio-demographic variables
+neighbourhood_data$localR2 <- gwr_out_demographic_gauss$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+neighbourhood_data$localR2 <- gwr_out_demographic_bisquare$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+# Spatial location variables
+neighbourhood_data$localR2 <- gwr_out_location_gauss$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+
+neighbourhood_data$localR2 <- gwr_out_location_bisquare$localR2
+mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 ```
 
 ```{r}
-#' Create two maps in one venster with a slider to compare Geographically Weighted Regression coefficients of a predictor variable with its significance levels by first joining these values to their respective neighbourhood polygons
+#' Create two maps to compare Geographically Weighted Regression coefficients of a predictor variable with its significance levels by first joining these values to their respective neighbourhood polygons
 #' 
 #' @param data Dataset with the polygon geometry information to which to join the coefficient and significance values
 #' @param gwr_results Data frame with results of trained Geographically Weighted Regression model. This is different for the model trained using spatial cross-validation and when spatial was not taken into account for cross-validation
@@ -1289,20 +1351,148 @@ map_coefficient_var_sig <- function(data, gwr_results, predictor, suffix="") {
 ```
 
 ```{r}
-min(gwr_out[,"gem_woning_waarde_se"])
+# Create a list with string representation of the predictors in each equation
+# Socio-economic variables
+lst_economic_str <- list("gem_woning_waarde", "aant_ink_ont", "p_laag_ink")
+
+# Socio-demographic variables
+lst_demographic_str <- list("vrouw", "p_0_15_jaar", "p_15_25_jaar", "p_25_45_jaar", "p_45_65_jaar", "p_gescheiden", "p_ia_west", "p_ia_n_west")
+
+# Spatial location variables
+lst_location_str <- list("bev_dichth_km2", "aantal_bedrijf", "voortg_ond_3km", "dist_NN_voting_station")
+
+# Composite of most promising variables 
+lst_final_str <- list("bev_dichth_km2", "vrouw", "p_0_15_jaar", "p_15_25_jaar", "p_25_45_jaar", "p_45_65_jaar", "p_gescheiden", "p_ia_west", "p_ia_n_west", "aantal_bedrijf", "gem_woning_waarde", "aant_ink_ont", "p_laag_ink", "voortg_ond_3km", "dist_NN_voting_station")
 ```
 
 ```{r}
-# TODO: get a variable that actually exists in the recipe the model is trained on, and run this function for multiple others too
-gwr_lst_female <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out, predictor="gem_woning_waarde", suffix="")
-gwr_coef_female <- gwr_lst_female[[1]]
-gwr_sig_female <- gwr_lst_female[[2]]
+# Create lists with coefficient and variable significance maps for each trained GWR model
+# Composite of most promising variables 
+for (i in 1:length(lst_final_str)){
+  gwr_lst_final_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_gauss, predictor=lst_final_str[i], suffix="")
+  gwr_lst_coef_final_gauss[[i]] <- gwr_lst_final_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_final_gauss[[i]] <- gwr_lst_final_gauss[[2]]
+}
 ```
 
 ```{r}
-# Compare maps of predictor coefficients and significance values # TODO: do this for others as well and may need to perhaps show this separately (without |)
-gwr_coef_female 
-gwr_sig_female
+for (i in 1:length(lst_final_str)){
+  gwr_lst_final_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_bisquare, predictor=lst_final_str[i], suffix="")
+  gwr_lst_coef_final_bisquare[[i]] <- gwr_lst_final_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_final_bisquare[[i]] <- gwr_lst_final_bisquare[[2]]
+}
+```
+
+```{r}
+# Socio-economic variables
+for (i in 1:length(lst_economic_str)){
+  gwr_lst_economic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_gauss, predictor=lst_economic_str[i], suffix="")
+  gwr_lst_coef_economic_gauss[[i]] <- gwr_lst_economic_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_economic_gauss[[i]] <- gwr_lst_economic_gauss[[2]]
+}
+```
+
+```{r}
+for (i in 1:length(lst_economic_str)){
+  gwr_lst_economic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_bisquare, predictor=lst_economic_str[i], suffix="")
+  gwr_lst_coef_economic_bisquare[[i]] <- gwr_lst_economic_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_economic_bisquare[[i]] <- gwr_lst_economic_bisquare[[2]]
+}
+```
+
+```{r}
+# Socio-demographic variables
+for (i in 1:length(lst_demographic_str)){
+  gwr_lst_demographic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_gauss, predictor=lst_demographic_str[i], suffix="")
+  gwr_lst_coef_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[2]]
+}
+```
+
+```{r}
+for (i in 1:length(lst_demographic_str)){
+  gwr_lst_demographic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_bisquare, predictor=lst_demographic_str[i], suffix="")
+  gwr_lst_coef_demographic_bisquare[[i]] <- gwr_lst_demographic_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_demographic_bisquare[[i]] <- gwr_lst_demographic_bisquare[[2]]
+}
+```
+
+```{r}
+# Spatial location variables
+for (i in 1:length(lst_location_str)){
+  gwr_lst_location_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_gauss, predictor=lst_location_str[i], suffix="")
+  gwr_lst_coef_location_gauss[[i]] <- gwr_lst_location_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_location_gauss[[i]] <- gwr_lst_location_gauss[[2]]
+}
+```
+
+```{r}
+for (i in 1:length(lst_location_str)){
+  gwr_lst_location_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_bisquare, predictor=lst_location_str[i], suffix="")
+  gwr_lst_coef_location_bisquare[[i]] <- gwr_lst_location_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_sig_location_bisquare[[i]] <- gwr_lst_location_bisquare[[2]]
+}
+```
+
+```{r}
+# Compare maps of predictor coefficients and significance values 
+# Composite of most promising variables 
+for (i in 1:length(gwr_lst_coef_final_gauss)){
+  gwr_lst_coef_final_gauss[i]
+  gwr_lst_sig_final_gauss[i]
+}
+```
+
+```{r}
+for (i in 1:length(gwr_lst_coef_final_bisquare)){
+  gwr_lst_coef_final_bisquare[i]
+  gwr_lst_sig_final_bisquare[i]
+}
+```
+
+```{r}
+# Socio-economic variables
+for (i in 1:length(gwr_lst_coef_economic_gauss)){
+  gwr_lst_coef_economic_gauss[i]
+  gwr_lst_sig_economic_gauss[i]
+}
+```
+
+```{r}
+for (i in 1:length(gwr_lst_coef_economic_bisquare)){
+  gwr_lst_coef_economic_bisquare[i]
+  gwr_lst_sig_economic_bisquare[i]
+}
+```
+
+```{r}
+# Socio-demographic variables
+for (i in 1:length(gwr_lst_coef_demographic_gauss)){
+  gwr_lst_coef_demographic_gauss[i]
+  gwr_lst_sig_demographic_gauss[i]
+}
+```
+
+```{r}
+for (i in 1:length(gwr_lst_coef_demographic_bisquare)){
+  gwr_lst_coef_demographic_bisquare[i]
+  gwr_lst_sig_demographic_bisquare[i]
+}
+```
+
+```{r}
+# Spatial location variables
+for (i in 1:length(gwr_lst_coef_location_gauss)){
+  gwr_lst_coef_location_gauss[i]
+  gwr_lst_sig_location_gauss[i]
+}
+```
+
+```{r}
+for (i in 1:length(gwr_lst_coef_location_bisquare)){
+  gwr_lst_coef_location_bisquare[i]
+  gwr_lst_sig_location_bisquare[i]
+}
 ```
 
 ## Inspect important variables of random forest model
