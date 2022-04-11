@@ -123,7 +123,7 @@ turnout_plot <- ggplot(data = neighbourhood_data) +
   xlab("Election turnout fraction") +
   theme_classic()
 
-# Plot the population density variable # TODO: use the actual predictors and add the other interesting ones as well
+# Plot the population density variable 
 pop_density_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="lightblue", aes(x = bev_dichth_km2)) +
   xlab("Population per km^2") +
@@ -269,7 +269,7 @@ plot_grid(n_working_plot, avg_income_plot, p_low_income_plot, p_high_income_plot
 turnout_map <- mapview::mapview(neighbourhood_data, 
                                 zcol = "turnout_ratio", 
                                 col.regions=brewer.pal(9, "YlOrRd"),
-                                at = c(0,0.2,0.4,0.6,0.8,1,1.5,2)) # TODO: for other vars also check if I need to set/change some values for the ranges as outliers make the ranges too broad so all same colour in map
+                                at = c(0,0.2,0.4,0.6,0.8,1,1.5,2)) 
 
 # Map interesting independent variables to compare with the spatial distribution of the independent variable 
 pop_density_map <- mapview::mapview(neighbourhood_data, 
@@ -558,7 +558,7 @@ model_eq_demographic <- turnout_ratio ~ vrouw + p_0_15_jaar + p_15_25_jaar + p_2
 # Spatial location variables
 model_eq_location <- turnout_ratio ~ bev_dichth_km2 + aantal_bedrijf + voortg_ond_3km + dist_NN_voting_station
 
-# Composite of most promising variables # TODO: determine all of these equations, make recipes of them and train all models for each
+# Composite of most promising variables 
 model_eq_final <- turnout_ratio ~ bev_dichth_km2 + vrouw + p_0_15_jaar + p_15_25_jaar + p_25_45_jaar + p_45_65_jaar + p_gescheiden + p_ia_west + p_ia_n_west + aantal_bedrijf + gem_woning_waarde + aant_ink_ont + p_laag_ink + voortg_ond_3km + dist_NN_voting_station
 ```
 
@@ -613,7 +613,7 @@ Train Geographically weighted regression model with adaptive kernel using each o
 #' 
 #' @return (gwr_model, k_NN) the trained GWR model and the number of nearest neighbourhoods to consider in the adaptive kernel
 train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NULL){
-  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects # TODO Instead of as_Spatial (which somehow doesn't work on prepared_data) can also supply coords (the coordinates of centroids here) 
+  # Before doing analysis for GWR the sf polygon object must be converted into a sp spatial object because the spgwr package usually works on sp objects 
   data <- as_Spatial(data)
   
   # Select optimal bandwidth for adaptive kernel (so k nearest neighbourhoods)
@@ -622,7 +622,7 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
                 data = data,
                 longlat = TRUE, 
                 adapt = TRUE, 
-                gweight = weight_func) # TODO: change to bivariate likely to not let neighbourhoods further away count as much, and also make spatial lag model
+                gweight = weight_func) 
   }
   
   # Determine number nearest neighbourhood observations to include 
@@ -681,7 +681,7 @@ lm_plan <-
 rf_plan <- parsnip::rand_forest() %>%
   parsnip::set_args(mtry  = tune()) %>%
   parsnip::set_args(min_n = tune()) %>%
-  parsnip::set_args(trees = 2000) %>% # Setting the first search with 2000 trees # TODO: could tune this as well but that makes the tuning time much much longer probably
+  parsnip::set_args(trees = 2000) %>% # Setting the first search with 2000 trees 
   parsnip::set_engine("ranger", importance = "permutation") %>% 
   parsnip::set_mode("regression")
 ```
@@ -874,7 +874,7 @@ OOF_preds <- rbind(
   data.frame(lm_best_OOF_preds_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-1a_Linear Regression final"),
                    data.frame(lm_best_OOF_preds_spatial_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-1b_Linear Regression spatial final"),
   data.frame(lm_best_OOF_preds_spatial_economic %>% dplyr::select(.pred,turnout_ratio),model = "Model-1c_Linear Regression spatial economic"),
-  data.frame(lm_best_OOF_preds_spatial_deographic %>% dplyr::select(.pred,turnout_ratio),model = "Model-1d_Linear Regression spatial demographic"),
+  data.frame(lm_best_OOF_preds_spatial_demographic %>% dplyr::select(.pred,turnout_ratio),model = "Model-1d_Linear Regression spatial demographic"),
   data.frame(lm_best_OOF_preds_spatial_location %>% dplyr::select(.pred,turnout_ratio),model = "Model-1e_Linear Regression spatial location"),
                    data.frame(rf_best_OOF_preds_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-2a_Random Forest final"), 
                    data.frame(rf_best_OOF_preds_spatial_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-2b_Random Forest spatial final"),
@@ -941,7 +941,7 @@ To check how well the models generalise to unseen data, the predictions are made
 #' @return list(lm_val_fit_geo, lm_val_pred_geo) list with as first element the final fit linear regression model, and as second element its predictions on the test dataset
 lm_final_training <- function(lm_workflow, data_split){
   # Fit model on full training dataset
-  lm_val_fit_geo <- lm_best_wf %>%
+  lm_val_fit_geo <- lm_workflow %>%
     last_fit(split     = data_split,
            metrics   = metric_set(yardstick::rmse, yardstick::rsq))
   
@@ -1097,7 +1097,7 @@ ggplot(data = val_preds %>%
 ```
 
 ```{r}
-# Plot mean absolute error (MAE) for each model # TODO: may need to ylim the plots as can otherwise be misleading how much different the values are
+# Plot mean absolute error (MAE) for each model 
 ggplot(data = val_preds %>%
          dplyr::select(model, MAE) %>%
          distinct() ,
@@ -1109,8 +1109,6 @@ ggplot(data = val_preds %>%
 ```
 
 ```{r}
-# TODO: may want to change xlim to make better visible
-
 # Plot predicted versus the observed values for each model in scatter plots
 ggplot(val_preds, aes(y=.pred , x = turnout_ratio,group = model))+ 
   geom_point(alpha = 0.3) +
@@ -1311,6 +1309,7 @@ lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_dat
   
   # Plot the residual on the neighbourhood polygons
   col_str <- paste("res_lm", suffix, sep="_") # Create column name using suffix
+  dataset[col_str] <- residuals_ordered$residual
   lm_res <- qtm(dataset, col_str)
   
   return (list(mc_global, lm_res))
@@ -1327,7 +1326,6 @@ lm_res_adj_final <- lm_res_adj_lst_final[[2]]
 
 ```{r}
 # Show residual plot using adjacency matrix and no spatial cross validation
-lm_res_adj_moran_final
 lm_res_adj_final
 ```
 
@@ -1340,7 +1338,6 @@ lm_res_ids_final <- lm_res_ids_lst_final[[2]]
 
 ```{r}
 # Show residual plot using inverse distance matrix and no spatial cross validation
-lm_res_ids_moran_final 
 lm_res_ids_final
 ```
 
@@ -1353,7 +1350,6 @@ lm_res_ids2_final <- lm_res_ids2_lst_final[[2]]
 
 ```{r}
 # Show residual plot using inverse distance squared matrix and no spatial cross validation
-lm_res_ids2_moran_final
 lm_res_ids2_final
 ```
 
@@ -1366,7 +1362,6 @@ lm_res_expdis_final <- lm_res_expdis_lst_final[[2]]
 
 ```{r}
 # Show residual plot using exp matrix and no spatial cross validation
-lm_res_expdis_moran_final
 lm_res_expdis_final
 ```
 
@@ -1380,7 +1375,6 @@ lm_res_adj_spatial_final <- lm_res_adj_spatial_lst_final[[2]]
 
 ```{r}
 # Show residual plot using adjacency matrix and with spatial cross validation
-lm_res_adj_spatial_moran_final
 lm_res_adj_spatial_final
 ```
 
@@ -1394,7 +1388,6 @@ lm_res_ids_spatial_final <- lm_res_ids_spatial_lst_final[[2]]
 
 ```{r}
 # Show residual plot using inverse distance matrix and with spatial cross validation
-lm_res_ids_spatial_moran_final
 lm_res_ids_spatial_final
 ```
 
@@ -1408,7 +1401,6 @@ lm_res_ids2_spatial_final <- lm_res_ids2_spatial_lst_final[[2]]
 
 ```{r}
 # Show residual plot using inverse distance^2 matrix and with spatial cross validation
-lm_res_ids2_spatial_moran_final
 lm_res_ids2_spatial_final
 ```
 
@@ -1422,7 +1414,6 @@ lm_res_expdis_spatial_final <- lm_res_expdis_spatial_lst_final[[2]]
 
 ```{r}
 # Show residual plot using exp matrix and with spatial cross validation
-lm_res_expdis_spatial_moran_final
 lm_res_expdis_spatial_final
 ```
 
@@ -1436,7 +1427,6 @@ lm_res_ids_spatial_economic <- lm_res_ids_spatial_lst_economic[[2]]
 
 ```{r}
 # Show residual plot using inverse distance matrix and with spatial cross validation
-lm_res_ids_spatial_moran_economic
 lm_res_ids_spatial_economic
 ```
 
@@ -1450,7 +1440,6 @@ lm_res_ids_spatial_demographic <- lm_res_ids_spatial_lst_demographic[[2]]
 
 ```{r}
 # Show residual plot using inverse distance matrix and with spatial cross validation
-lm_res_ids_spatial_moran_demographic
 lm_res_ids_spatial_demographic
 ```
 
@@ -1464,7 +1453,6 @@ lm_res_ids_spatial_location <- lm_res_ids_spatial_lst_location[[2]]
 
 ```{r}
 # Show residual plot using inverse distance matrix and with spatial cross validation
-lm_res_ids_spatial_moran_location
 lm_res_ids_spatial_location
 ```
 
@@ -1485,28 +1473,16 @@ Using the weight matrices defined in the previous section, try to tackle spatial
 #' 
 #' @return list(error_model, mc_global, error_res) list with as first element the trained spatial error model, as second element the Moran's I, and as third element a map with the residuals plotted on their neighbourhoods
 estimate_error_lag_model <- function(model_equation, data, weight_matrix, model_str='error', n_permutations=1000, suffix=''){
-    # Use the create recipe function on the full dataset (instead of only training data as with other models) to normalize, center and scale the predictors for more robust training
-  model_rec <- create_recipe(model_eq = model_equation, training_data = data)
-  prepared_data <- juice(prep(model_rec))
-  
-  # TODO: if this model should actually first be trained on only training data then use code of below
-  # # Retrieve model equation from recipe
-  # model_eq <- formula(prep(model_recipe))
-  # 
-  # # Retrieve the prepared data from the model recipe, which already  normalized, centered and scaled the predictors for more robust training
-  # prepared_data <- juice(prep(model_recipe))
-  
-  # Estimate Spatial error or lag model with weight matrix
+  # Estimate Spatial error or lag model with given weight matrix
   if (model_str=='error'){
-    model <- errorsarlm(model_equation, data=prepared_data, listw=weight_matrix, zero.policy=TRUE)
+    model <- errorsarlm(model_equation, data=data, listw=weight_matrix, zero.policy=TRUE)
   }
   else if (model_str=='lag'){
-    model <- lagsarlm(model_equation, data=prepared_data, listw=weight_matrix, zero.policy=TRUE)
+    model <- lagsarlm(model_equation, data=data, listw=weight_matrix, zero.policy=TRUE)
   }
 
   # Because the moran.test function for retrieving the Moran's I is sensitive to irregularly distributed polygons, here we use a Monte Carlo method to bootstrap different polygon distribution (with moran.mc() function)
   mc_global <- moran.mc(model$residuals, weight_matrix, n_permutations, alternative="greater") # When the p value is significant we reject the null hypothesis that there is no significant autocorrelations among the variable, and accept that, the residual has spatial clustering
-  plot(mc_global)
   
   # Plot the residual on the neighbourhood polygons
   col_str <- paste("res", suffix, sep="_") # Create column name using suffix
@@ -1515,6 +1491,82 @@ estimate_error_lag_model <- function(model_equation, data, weight_matrix, model_
   
   return (list(model, mc_global, residuals))
 }
+```
+
+```{r}
+# Estimate spatial error model with adjacency matrix
+# Combination of best predictors
+error_model_final_adj_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wadj, model_str='error', n_permutations=1000, suffix='final_adj')
+error_model_final_adj <- error_model_final_adj_lst[[1]]
+error_model_final_adj_moran <- error_model_final_adj_lst[[2]]
+error_model_final_adj_res <- error_model_final_adj_lst[[3]]
+
+# Inspect model
+summary(error_model_final_adj)
+
+# Describe Moran's I
+print(error_model_final_adj_moran)
+plot(error_model_final_adj_moran)
+
+# Plot autocorrelation
+error_model_final_adj_res 
+```
+
+```{r}
+# Estimate spatial error model with inverse distance matrix
+# Combination of best predictors
+error_model_final_ids_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wids, model_str='error', n_permutations=1000, suffix='final_ids')
+error_model_final_ids <- error_model_final_ids_lst[[1]]
+error_model_final_ids_moran <- error_model_final_ids_lst[[2]]
+error_model_final_ids_res <- error_model_final_ids_lst[[3]]
+
+# Inspect model
+summary(error_model_final_ids)
+
+# Describe Moran's I
+print(error_model_final_ids_moran)
+plot(error_model_final_ids_moran)
+
+# Plot autocorrelation
+error_model_final_ids_res 
+```
+
+```{r}
+# Estimate spatial error model with inverse distance^2 matrix
+# Combination of best predictors
+error_model_final_ids2_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wids2, model_str='error', n_permutations=1000, suffix='final_ids2')
+error_model_final_ids2 <- error_model_final_ids2_lst[[1]]
+error_model_final_ids2_moran <- error_model_final_ids2_lst[[2]]
+error_model_final_ids2_res <- error_model_final_ids2_lst[[3]]
+
+# Inspect model
+summary(error_model_final_ids2)
+
+# Describe Moran's I
+print(error_model_final_ids2_moran)
+plot(error_model_final_ids2_moran)
+
+# Plot autocorrelation
+error_model_final_ids2_res 
+```
+
+```{r}
+# Estimate spatial error model with exp matrix
+# Combination of best predictors
+error_model_final_exp_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wexpdis, model_str='error', n_permutations=1000, suffix='final_expdis')
+error_model_final_exp <- error_model_final_exp_lst[[1]]
+error_model_final_exp_moran <- error_model_final_exp_lst[[2]]
+error_model_final_exp_res <- error_model_final_exp_lst[[3]]
+
+# Inspect model
+summary(error_model_final_exp)
+
+# Describe Moran's I
+print(error_model_final_exp_moran)
+plot(error_model_final_exp_moran)
+
+# Plot autocorrelation
+error_model_final_exp_res 
 ```
 
 ```{r}
@@ -1530,9 +1582,181 @@ summary(error_model_economic_ids)
 
 # Describe Moran's I
 print(error_model_economic_ids_moran)
+plot(error_model_economic_ids_moran)
 
 # Plot autocorrelation
-error_model_economic_ids_res # TODO show error residuals map
+error_model_economic_ids_res 
+```
+
+```{r}
+# Estimate spatial error model with inverse distance matrix
+# Socio-demographic predictors
+error_model_demographic_ids_lst <- estimate_error_lag_model(model_equation=model_eq_demographic, data=neighbourhood_data, weight_matrix=Wids, model_str='error', n_permutations=1000, suffix='demographic_ids')
+error_model_demographic_ids <- error_model_demographic_ids_lst[[1]]
+error_model_demographic_ids_moran <- error_model_demographic_ids_lst[[2]]
+error_model_demographic_ids_res <- error_model_demographic_ids_lst[[3]]
+
+# Inspect model
+summary(error_model_demographic_ids)
+
+# Describe Moran's I
+print(error_model_demographic_ids_moran)
+plot(error_model_demographic_ids_moran)
+
+# Plot autocorrelation
+error_model_demographic_ids_res 
+```
+
+```{r}
+# Estimate spatial error model with inverse distance matrix
+# Spatial location predictors
+error_model_location_ids_lst <- estimate_error_lag_model(model_equation=model_eq_location, data=neighbourhood_data, weight_matrix=Wids, model_str='error', n_permutations=1000, suffix='location_ids')
+error_model_location_ids <- error_model_location_ids_lst[[1]]
+error_model_location_ids_moran <- error_model_location_ids_lst[[2]]
+error_model_location_ids_res <- error_model_location_ids_lst[[3]]
+
+# Inspect model
+summary(error_model_location_ids)
+
+# Describe Moran's I
+print(error_model_location_ids_moran)
+plot(error_model_location_ids_moran)
+
+# Plot autocorrelation
+error_model_location_ids_res 
+```
+
+```{r}
+# Estimate spatial lag model with adjacency matrix
+# Combination of best predictors
+lag_model_final_adj_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wadj, model_str='lag', n_permutations=1000, suffix='final_adj')
+lag_model_final_adj <- lag_model_final_adj_lst[[1]]
+lag_model_final_adj_moran <- lag_model_final_adj_lst[[2]]
+lag_model_final_adj_res <- lag_model_final_adj_lst[[3]]
+
+# Inspect model
+summary(lag_model_final_adj)
+
+# Describe Moran's I
+print(lag_model_final_adj_moran)
+plot(lag_model_final_adj_moran)
+
+# Plot autocorrelation
+lag_model_final_adj_res 
+```
+
+```{r}
+# Estimate spatial lag model with inverse distance matrix
+# Combination of best predictors
+lag_model_final_ids_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wids, model_str='lag', n_permutations=1000, suffix='final_ids')
+lag_model_final_ids <- lag_model_final_ids_lst[[1]]
+lag_model_final_ids_moran <- lag_model_final_ids_lst[[2]]
+lag_model_final_ids_res <- lag_model_final_ids_lst[[3]]
+
+# Inspect model
+summary(lag_model_final_ids)
+
+# Describe Moran's I
+print(lag_model_final_ids_moran)
+plot(lag_model_final_ids_moran)
+
+# Plot autocorrelation
+lag_model_final_ids_res 
+```
+
+```{r}
+# Estimate spatial lag model with inverse distance^2 matrix
+# Combination of best predictors
+lag_model_final_ids2_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wids2, model_str='lag', n_permutations=1000, suffix='final_ids2')
+lag_model_final_ids2 <- lag_model_final_ids2_lst[[1]]
+lag_model_final_ids2_moran <- lag_model_final_ids2_lst[[2]]
+lag_model_final_ids2_res <- lag_model_final_ids2_lst[[3]]
+
+# Inspect model
+summary(lag_model_final_ids2)
+
+# Describe Moran's I
+print(lag_model_final_ids2_moran)
+plot(lag_model_final_ids2_moran)
+
+# Plot autocorrelation
+lag_model_final_ids2_res 
+```
+
+```{r}
+# Estimate spatial lag model with exp matrix
+# Combination of best predictors
+lag_model_final_exp_lst <- estimate_error_lag_model(model_equation=model_eq_final, data=neighbourhood_data, weight_matrix=Wexpdis, model_str='lag', n_permutations=1000, suffix='final_expdis')
+lag_model_final_exp <- lag_model_final_exp_lst[[1]]
+lag_model_final_exp_moran <- lag_model_final_exp_lst[[2]]
+lag_model_final_exp_res <- lag_model_final_exp_lst[[3]]
+
+# Inspect model
+summary(lag_model_final_exp)
+
+# Describe Moran's I
+print(lag_model_final_exp_moran)
+plot(lag_model_final_exp_moran)
+
+# Plot autocorrelation
+lag_model_final_exp_res 
+```
+
+```{r}
+# Estimate spatial lag model with inverse distance matrix
+# Socio-economic predictors
+lag_model_economic_ids_lst <- estimate_error_lag_model(model_equation=model_eq_economic, data=neighbourhood_data, weight_matrix=Wids, model_str='lag', n_permutations=1000, suffix='economic_ids')
+lag_model_economic_ids <- lag_model_economic_ids_lst[[1]]
+lag_model_economic_ids_moran <- lag_model_economic_ids_lst[[2]]
+lag_model_economic_ids_res <- lag_model_economic_ids_lst[[3]]
+
+# Inspect model
+summary(lag_model_economic_ids)
+
+# Describe Moran's I
+print(lag_model_economic_ids_moran)
+plot(lag_model_economic_ids_moran)
+
+# Plot autocorrelation
+lag_model_economic_ids_res 
+```
+
+```{r}
+# Estimate spatial lag model with inverse distance matrix
+# Socio-demographic predictors
+lag_model_demographic_ids_lst <- estimate_error_lag_model(model_equation=model_eq_demographic, data=neighbourhood_data, weight_matrix=Wids, model_str='lag', n_permutations=1000, suffix='demographic_ids')
+lag_model_demographic_ids <- lag_model_demographic_ids_lst[[1]]
+lag_model_demographic_ids_moran <- lag_model_demographic_ids_lst[[2]]
+lag_model_demographic_ids_res <- lag_model_demographic_ids_lst[[3]]
+
+# Inspect model
+summary(lag_model_demographic_ids)
+
+# Describe Moran's I
+print(lag_model_demographic_ids_moran)
+plot(lag_model_demographic_ids_moran)
+
+# Plot autocorrelation
+lag_model_demographic_ids_res 
+```
+
+```{r}
+# Estimate spatial lag model with inverse distance matrix
+# Spatial location predictors
+lag_model_location_ids_lst <- estimate_error_lag_model(model_equation=model_eq_location, data=neighbourhood_data, weight_matrix=Wids, model_str='lag', n_permutations=1000, suffix='location_ids')
+lag_model_location_ids <- lag_model_location_ids_lst[[1]]
+lag_model_location_ids_moran <- lag_model_location_ids_lst[[2]]
+lag_model_location_ids_res <- lag_model_location_ids_lst[[3]]
+
+# Inspect model
+summary(lag_model_location_ids)
+
+# Describe Moran's I
+print(lag_model_location_ids_moran)
+plot(lag_model_location_ids_moran)
+
+# Plot autocorrelation
+lag_model_location_ids_res 
 ```
 
 ## Investigate non-stationarity with Geographically weighted regression model
@@ -1575,6 +1799,7 @@ gwr_out_final_bisquare <- as.data.frame(gwr_final_bisquare$SDF)
 # gwr_out_economic_gauss <- as.data.frame(gwr_economic_gauss$SDF)
 gwr_out_economic_bisquare <- as.data.frame(gwr_economic_bisquare$SDF)
 ```
+
 ```{r}
 # Socio-demographic variables
 # gwr_out_demographic_gauss <- as.data.frame(gwr_demographic_gauss$SDF)
@@ -1830,30 +2055,85 @@ To investigate what variables are most important for the Random Forest model to 
 ```{r}
 # Inspect more model statistics 
 # Without spatial cross validation
-rf_model <- lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model)
-augment(rf_model)
-glance(rf_model)
+# Composite of best predictors
+rf_model_final <- lm_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_final)
+augment(rf_model_final)
+glance(rf_model_final)
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
-rf_model_spatial <- lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_spatial)
-augment(rf_model_spatial)
-glance(rf_model_spatial)
+# Composite of best predictors
+rf_model_spatial_final <- lm_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_spatial_final)
+augment(rf_model_spatial_final)
+glance(rf_model_spatial_final)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+# Socio-economic
+rf_model_spatial_economic <- lm_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_spatial_economic)
+augment(rf_model_spatial_economic)
+glance(rf_model_spatial_economic)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+# Socio-demographic
+rf_model_spatial_demographic <- lm_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_spatial_demographic)
+augment(rf_model_spatial_demographic)
+glance(rf_model_spatial_demographic)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+# Spatial location
+rf_model_spatial_location <- lm_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+tidy(rf_model_spatial_location)
+augment(rf_model_spatial_location)
+glance(rf_model_spatial_location)
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # Without spatial cross-validation
-rf_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>%
-vip::vip(num_features = 20, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data 
+# Composite of best predictors
+rf_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>%
+vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
-rf_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 19, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) # TODO: set num_features to sensible value for data
+# Composite of best predictors
+rf_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+```
+
+```{r}
+# Plot the variable importance based on permutation (because on that is trained in tidymodels)
+# With spatial cross-validation
+# Socio-economic
+rf_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 3, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+```
+
+```{r}
+# Plot the variable importance based on permutation (because on that is trained in tidymodels)
+# With spatial cross-validation
+# Socio-demographic
+rf_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 8, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+```
+
+```{r}
+# Plot the variable importance based on permutation (because on that is trained in tidymodels)
+# With spatial cross-validation
+# Spatial location
+rf_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 4, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
 ```
