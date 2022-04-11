@@ -1247,15 +1247,21 @@ Now the Geographically weighted regression models are trained, it is interesting
 # Composite of most promising variables 
 gwr_final_gauss
 gwr_final_bisquare
+```
 
+```{r}
 # Socio-economic variables
 gwr_economic_gauss
 gwr_economic_bisquare
+```
 
+```{r}
 # Socio-demographic variables
 gwr_demographic_gauss
 gwr_demographic_bisquare
+```
 
+```{r}
 # Spatial location variables
 gwr_location_gauss
 gwr_location_bisquare
@@ -1266,15 +1272,20 @@ gwr_location_bisquare
 # Composite of most promising variables 
 gwr_out_final_gauss <- as.data.frame(gwr_final_gauss$SDF)
 gwr_out_final_bisquare <- as.data.frame(gwr_final_bisquare$SDF)
+```
 
+```{r}
 # Socio-economic variables
 gwr_out_economic_gauss <- as.data.frame(gwr_economic_gauss$SDF)
 gwr_out_economic_bisquare <- as.data.frame(gwr_economic_bisquare$SDF)
-
+```
+```{r}
 # Socio-demographic variables
 gwr_out_demographic_gauss <- as.data.frame(gwr_demographic_gauss$SDF)
 gwr_out_demographic_bisquare <- as.data.frame(gwr_demographic_bisquare$SDF)
+```
 
+```{r}
 # Spatial location variables
 gwr_out_location_gauss <- as.data.frame(gwr_location_gauss$SDF)
 gwr_out_location_bisquare <- as.data.frame(gwr_location_bisquare$SDF)
@@ -1288,21 +1299,27 @@ mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9,
 
 neighbourhood_data$localR2 <- gwr_out_final_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+```
 
+```{r}
 # Socio-economic variables
 neighbourhood_data$localR2 <- gwr_out_economic_gauss$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 
 neighbourhood_data$localR2 <- gwr_out_economic_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+```
 
+```{r}
 # Socio-demographic variables
 neighbourhood_data$localR2 <- gwr_out_demographic_gauss$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 
 neighbourhood_data$localR2 <- gwr_out_demographic_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+```
 
+```{r}
 # Spatial location variables
 neighbourhood_data$localR2 <- gwr_out_location_gauss$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
@@ -1368,68 +1385,84 @@ lst_final_str <- list("bev_dichth_km2", "vrouw", "p_0_15_jaar", "p_15_25_jaar", 
 ```{r}
 # Create lists with coefficient and variable significance maps for each trained GWR model
 # Composite of most promising variables 
+gwr_lst_coef_final_gauss <- list()
+gwr_lst_sig_final_gauss <- list()
 for (i in 1:length(lst_final_str)){
-  gwr_lst_final_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_gauss, predictor=lst_final_str[i], suffix="")
-  gwr_lst_coef_final_gauss[[i]] <- gwr_lst_final_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_final_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_gauss, predictor=lst_final_str[[i]], suffix="")
+  gwr_lst_coef_final_gauss[[i]] <- gwr_lst_final_gauss[[1]] 
   gwr_lst_sig_final_gauss[[i]] <- gwr_lst_final_gauss[[2]]
 }
 ```
 
 ```{r}
+gwr_lst_coef_final_bisquare <- list()
+gwr_lst_sig_final_bisquare <- list()
 for (i in 1:length(lst_final_str)){
-  gwr_lst_final_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_bisquare, predictor=lst_final_str[i], suffix="")
-  gwr_lst_coef_final_bisquare[[i]] <- gwr_lst_final_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_final_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_final_bisquare, predictor=lst_final_str[[i]], suffix="")
+  gwr_lst_coef_final_bisquare[[i]] <- gwr_lst_final_bisquare[[1]] 
   gwr_lst_sig_final_bisquare[[i]] <- gwr_lst_final_bisquare[[2]]
 }
 ```
 
 ```{r}
 # Socio-economic variables
+gwr_lst_coef_economic_gauss <- list()
+gwr_lst_sig_economic_gauss <- list()
 for (i in 1:length(lst_economic_str)){
-  gwr_lst_economic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_gauss, predictor=lst_economic_str[i], suffix="")
-  gwr_lst_coef_economic_gauss[[i]] <- gwr_lst_economic_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_economic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_gauss, predictor=lst_economic_str[[i]], suffix="")
+  gwr_lst_coef_economic_gauss[[i]] <- gwr_lst_economic_gauss[[1]] 
   gwr_lst_sig_economic_gauss[[i]] <- gwr_lst_economic_gauss[[2]]
 }
 ```
 
 ```{r}
+gwr_lst_coef_economic_bisquare <- list()
+gwr_lst_sig_economic_bisquare <- list()
 for (i in 1:length(lst_economic_str)){
-  gwr_lst_economic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_bisquare, predictor=lst_economic_str[i], suffix="")
-  gwr_lst_coef_economic_bisquare[[i]] <- gwr_lst_economic_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_economic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_bisquare, predictor=lst_economic_str[[i]], suffix="")
+  gwr_lst_coef_economic_bisquare[[i]] <- gwr_lst_economic_bisquare[[1]] 
   gwr_lst_sig_economic_bisquare[[i]] <- gwr_lst_economic_bisquare[[2]]
 }
 ```
 
 ```{r}
 # Socio-demographic variables
+gwr_lst_coef_demographic_gauss <- list()
+gwr_lst_sig_demographic_gauss <- list()
 for (i in 1:length(lst_demographic_str)){
-  gwr_lst_demographic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_gauss, predictor=lst_demographic_str[i], suffix="")
-  gwr_lst_coef_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_demographic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_gauss, predictor=lst_demographic_str[[i]], suffix="")
+  gwr_lst_coef_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[1]] 
   gwr_lst_sig_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[2]]
 }
 ```
 
 ```{r}
+gwr_lst_coef_demographic_bisquare <- list()
+gwr_lst_sig_demographic_bisquare <- list()
 for (i in 1:length(lst_demographic_str)){
-  gwr_lst_demographic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_bisquare, predictor=lst_demographic_str[i], suffix="")
-  gwr_lst_coef_demographic_bisquare[[i]] <- gwr_lst_demographic_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_demographic_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_bisquare, predictor=lst_demographic_str[[i]], suffix="")
+  gwr_lst_coef_demographic_bisquare[[i]] <- gwr_lst_demographic_bisquare[[1]] 
   gwr_lst_sig_demographic_bisquare[[i]] <- gwr_lst_demographic_bisquare[[2]]
 }
 ```
 
 ```{r}
 # Spatial location variables
+gwr_lst_coef_location_gauss <- list()
+gwr_lst_sig_location_gauss <- list()
 for (i in 1:length(lst_location_str)){
-  gwr_lst_location_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_gauss, predictor=lst_location_str[i], suffix="")
-  gwr_lst_coef_location_gauss[[i]] <- gwr_lst_location_gauss[[1]] # TODO: make sure to add all to list
+  gwr_lst_location_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_gauss, predictor=lst_location_str[[i]], suffix="")
+  gwr_lst_coef_location_gauss[[i]] <- gwr_lst_location_gauss[[1]] 
   gwr_lst_sig_location_gauss[[i]] <- gwr_lst_location_gauss[[2]]
 }
 ```
 
 ```{r}
+gwr_lst_coef_location_bisquare <- list()
+gwr_lst_sig_location_bisquare <- list()
 for (i in 1:length(lst_location_str)){
-  gwr_lst_location_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_bisquare, predictor=lst_location_str[i], suffix="")
-  gwr_lst_coef_location_bisquare[[i]] <- gwr_lst_location_bisquare[[1]] # TODO: make sure to add all to list
+  gwr_lst_location_bisquare <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_bisquare, predictor=lst_location_str[[i]], suffix="")
+  gwr_lst_coef_location_bisquare[[i]] <- gwr_lst_location_bisquare[[1]] 
   gwr_lst_sig_location_bisquare[[i]] <- gwr_lst_location_bisquare[[2]]
 }
 ```
@@ -1438,60 +1471,60 @@ for (i in 1:length(lst_location_str)){
 # Compare maps of predictor coefficients and significance values 
 # Composite of most promising variables 
 for (i in 1:length(gwr_lst_coef_final_gauss)){
-  gwr_lst_coef_final_gauss[i]
-  gwr_lst_sig_final_gauss[i]
+  show(gwr_lst_coef_final_gauss[[i]])
+  show(gwr_lst_sig_final_gauss[[i]])
 }
 ```
 
 ```{r}
 for (i in 1:length(gwr_lst_coef_final_bisquare)){
-  gwr_lst_coef_final_bisquare[i]
-  gwr_lst_sig_final_bisquare[i]
+  show(gwr_lst_coef_final_bisquare[[i]])
+  show(gwr_lst_sig_final_bisquare[[i]])
 }
 ```
 
 ```{r}
 # Socio-economic variables
 for (i in 1:length(gwr_lst_coef_economic_gauss)){
-  gwr_lst_coef_economic_gauss[i]
-  gwr_lst_sig_economic_gauss[i]
+  show(gwr_lst_coef_economic_gauss[[i]])
+  show(gwr_lst_sig_economic_gauss[[i]])
 }
 ```
 
 ```{r}
 for (i in 1:length(gwr_lst_coef_economic_bisquare)){
-  gwr_lst_coef_economic_bisquare[i]
-  gwr_lst_sig_economic_bisquare[i]
+  show(gwr_lst_coef_economic_bisquare[[i]])
+  show(gwr_lst_sig_economic_bisquare[[i]])
 }
 ```
 
 ```{r}
 # Socio-demographic variables
 for (i in 1:length(gwr_lst_coef_demographic_gauss)){
-  gwr_lst_coef_demographic_gauss[i]
-  gwr_lst_sig_demographic_gauss[i]
+  show(gwr_lst_coef_demographic_gauss[[i]])
+  show(gwr_lst_sig_demographic_gauss[[i]])
 }
 ```
 
 ```{r}
 for (i in 1:length(gwr_lst_coef_demographic_bisquare)){
-  gwr_lst_coef_demographic_bisquare[i]
-  gwr_lst_sig_demographic_bisquare[i]
+  show(gwr_lst_coef_demographic_bisquare[[i]])
+  show(gwr_lst_sig_demographic_bisquare[[i]])
 }
 ```
 
 ```{r}
 # Spatial location variables
 for (i in 1:length(gwr_lst_coef_location_gauss)){
-  gwr_lst_coef_location_gauss[i]
-  gwr_lst_sig_location_gauss[i]
+  show(gwr_lst_coef_location_gauss[[i]])
+  show(gwr_lst_sig_location_gauss[[i]])
 }
 ```
 
 ```{r}
 for (i in 1:length(gwr_lst_coef_location_bisquare)){
-  gwr_lst_coef_location_bisquare[i]
-  gwr_lst_sig_location_bisquare[i]
+  show(gwr_lst_coef_location_bisquare[[i]])
+  show(gwr_lst_sig_location_bisquare[[i]])
 }
 ```
 
