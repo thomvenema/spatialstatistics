@@ -643,25 +643,26 @@ train_GWR <- function(data, model_equation, weight_func=gwr.Gauss, bandwidth=NUL
 ```{r}
 # Train model for each equation using different weight functions
 # Final formula with all predictors that don't have multicollinearity
+# Train this with Gaussian and Bisquare kernel shape
 gwr_final_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_final, weight_func=gwr.Gauss, bandwidth=NULL)
 gwr_final_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_final, weight_func=gwr.bisquare, bandwidth=NULL)
 ```
 
 ```{r}
 # Socio-economic
-gwr_economic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.Gauss, bandwidth=NULL)
+# gwr_economic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.Gauss, bandwidth=NULL)
 gwr_economic_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_economic, weight_func=gwr.bisquare, bandwidth=NULL)
 ```
 
 ```{r}
 # Socio-demographic
-gwr_demographic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_demographic, weight_func=gwr.Gauss, bandwidth=NULL)
+# gwr_demographic_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_demographic, weight_func=gwr.Gauss, bandwidth=NULL)
 gwr_demographic_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_demographic, weight_func=gwr.bisquare, bandwidth=NULL)
 ```
 
 ```{r}
 # Spatial location
-gwr_location_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_location, weight_func=gwr.Gauss, bandwidth=NULL)
+# gwr_location_gauss <- train_GWR(data=neighbourhood_data, model_equation=model_eq_location, weight_func=gwr.Gauss, bandwidth=NULL)
 gwr_location_bisquare <- train_GWR(data=neighbourhood_data, model_equation=model_eq_location, weight_func=gwr.bisquare, bandwidth=NULL)
 ```
 
@@ -690,7 +691,7 @@ For the hyperparameters that are set to be tuned above, set up the grid search c
 # Use the expansion option for setting the grids
 # Random forest grid
 rf_grid <- expand.grid (mtry = c(3,6,9), 
-                       min_n = c(100,500,800)) # TODO: set min_n based on how many neighbourhoods and mtry based on number of variables we have
+                       min_n = c(100,500,800))
 ```
 
 ## Determine the best tuned hyperparameters and corresponding linear regression and random forest models
@@ -732,20 +733,52 @@ lm_cross_validation <- function(lm_plan, model_recipe, cv_folds){
 
 ```{r}
 # Use cross validation to determine the best linear regression model
-lm_lst <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_splits)
+# Composite of all most promising variables
+lm_lst_final <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_splits)
 
-lm_best_params <- lm_lst[[1]]
-lm_best_OOF_preds <- lm_lst[[2]]
-lm_best_wf <- lm_lst[[3]]
+lm_best_params_final <- lm_lst_final[[1]]
+lm_best_OOF_preds_final <- lm_lst_final[[2]]
+lm_best_wf_final <- lm_lst_final[[3]]
 ```
 
 ```{r}
 # Use spatial cross validation to determine the best linear regression model
-lm_lst_spatial <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
+# Composite of all most promising variables
+lm_lst_spatial_final <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
 
-lm_best_params_spatial <- lm_lst_spatial[[1]]
-lm_best_OOF_preds_spatial <- lm_lst_spatial[[2]]
-lm_best_wf_spatial <- lm_lst_spatial[[3]]
+lm_best_params_spatial_final <- lm_lst_spatial_final[[1]]
+lm_best_OOF_preds_spatial_final <- lm_lst_spatial_final[[2]]
+lm_best_wf_spatial_final <- lm_lst_spatial_final[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best linear regression model
+# Socio-economic
+lm_lst_spatial_economic <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_economic, cv_folds=cv_spatial_folds)
+
+lm_best_params_spatial_economic <- lm_lst_spatial_economic[[1]]
+lm_best_OOF_preds_spatial_economic <- lm_lst_spatial_economic[[2]]
+lm_best_wf_spatial_economic <- lm_lst_spatial_economic[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best linear regression model
+# Socio-demographic
+lm_lst_spatial_demographic <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_demographic, cv_folds=cv_spatial_folds)
+
+lm_best_params_spatial_demographic <- lm_lst_spatial_demographic[[1]]
+lm_best_OOF_preds_spatial_demographic <- lm_lst_spatial_demographic[[2]]
+lm_best_wf_spatial_demographic <- lm_lst_spatial_demographic[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best linear regression model
+# Spatial location
+lm_lst_spatial_location <- lm_cross_validation(lm_plan=lm_plan, model_recipe=model_rec_location, cv_folds=cv_spatial_folds)
+
+lm_best_params_spatial_location <- lm_lst_spatial_location[[1]]
+lm_best_OOF_preds_spatial_location <- lm_lst_spatial_location[[2]]
+lm_best_wf_spatial_location <- lm_lst_spatial_location[[3]]
 ```
 
 ```{r}
@@ -786,30 +819,68 @@ rf_cross_validation <- function(rf_plan, rf_grid, model_recipe, cv_folds){
 
 ```{r}
 # Use cross validation to determine the best random forest model
-rf_lst <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_splits)
+# Composite of most promising variables
+rf_lst_final <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_splits)
 
-rf_best_params <- rf_lst[[1]]
-rf_best_OOF_preds <- rf_lst[[2]]
-rf_best_wf <- rf_lst[[3]]
+rf_best_params_final <- rf_lst_final[[1]]
+rf_best_OOF_preds_final <- rf_lst_final[[2]]
+rf_best_wf_final <- rf_lst_final[[3]]
 ```
 
 ```{r}
 # Use spatial cross validation to determine the best random forest model
-rf_lst_spatial <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
+# Composite of most promising variables
+rf_lst_spatial_final <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_final, cv_folds=cv_spatial_folds)
 
-rf_best_params_spatial <- rf_lst_spatial[[1]]
-rf_best_OOF_preds_spatial <- rf_lst_spatial[[2]]
-rf_best_wf_spatial <- rf_lst_spatial[[3]]
+rf_best_params_spatial_final <- rf_lst_spatial_final[[1]]
+rf_best_OOF_preds_spatial_final <- rf_lst_spatial_final[[2]]
+rf_best_wf_spatial_final <- rf_lst_spatial_final[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best random forest model
+# Socio-economic
+rf_lst_spatial_economic <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_economic, cv_folds=cv_spatial_folds)
+
+rf_best_params_spatial_economic <- rf_lst_spatial_economic[[1]]
+rf_best_OOF_preds_spatial_economic <- rf_lst_spatial_economic[[2]]
+rf_best_wf_spatial_economic <- rf_lst_spatial_economic[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best random forest model
+# Socio-demographic
+rf_lst_spatial_demographic <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_demographic, cv_folds=cv_spatial_folds)
+
+rf_best_params_spatial_demographic <- rf_lst_spatial_demographic[[1]]
+rf_best_OOF_preds_spatial_demographic <- rf_lst_spatial_demographic[[2]]
+rf_best_wf_spatial_demographic <- rf_lst_spatial_demographic[[3]]
+```
+
+```{r}
+# Use spatial cross validation to determine the best random forest model
+# Spatial location
+rf_lst_spatial_location <- rf_cross_validation(rf_plan=rf_plan, rf_grid=rf_grid, model_recipe=model_rec_location, cv_folds=cv_spatial_folds)
+
+rf_best_params_spatial_location <- rf_lst_spatial_location[[1]]
+rf_best_OOF_preds_spatial_location <- rf_lst_spatial_location[[2]]
+rf_best_wf_spatial_location <- rf_lst_spatial_location[[3]]
 ```
 
 Evaluate performance of these best tuned models on training data.
 ```{r}
 # Make prediction for each model and attach error statistics
 OOF_preds <- rbind(
-  data.frame(lm_best_OOF_preds %>% dplyr::select(.pred,turnout_ratio),model = "Model-1a_Linear Regression"),
-                   data.frame(lm_best_OOF_preds_spatial %>% dplyr::select(.pred,turnout_ratio),model = "Model-1b_Linear Regression spatial"),
-                   data.frame(rf_best_OOF_preds %>% dplyr::select(.pred,turnout_ratio),model = "Model-3a_Random Forest"), 
-                   data.frame(rf_best_OOF_preds_spatial %>% dplyr::select(.pred,turnout_ratio),model = "Model-3b_Random Forest spatial")) %>%
+  data.frame(lm_best_OOF_preds_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-1a_Linear Regression final"),
+                   data.frame(lm_best_OOF_preds_spatial_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-1b_Linear Regression spatial final"),
+  data.frame(lm_best_OOF_preds_spatial_economic %>% dplyr::select(.pred,turnout_ratio),model = "Model-1c_Linear Regression spatial economic"),
+  data.frame(lm_best_OOF_preds_spatial_deographic %>% dplyr::select(.pred,turnout_ratio),model = "Model-1d_Linear Regression spatial demographic"),
+  data.frame(lm_best_OOF_preds_spatial_location %>% dplyr::select(.pred,turnout_ratio),model = "Model-1e_Linear Regression spatial location"),
+                   data.frame(rf_best_OOF_preds_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-2a_Random Forest final"), 
+                   data.frame(rf_best_OOF_preds_spatial_final %>% dplyr::select(.pred,turnout_ratio),model = "Model-2b_Random Forest spatial final"),
+  data.frame(rf_best_OOF_preds_spatial_economic %>% dplyr::select(.pred,turnout_ratio),model = "Model-2c_Random Forest spatial economic"),
+  data.frame(rf_best_OOF_preds_spatial_demographic %>% dplyr::select(.pred,turnout_ratio),model = "Model-2d_Random Forest spatial demographic"),
+  data.frame(rf_best_OOF_preds_spatial_location %>% dplyr::select(.pred,turnout_ratio),model = "Model-2e_Random Forest spatial location")) %>%
   group_by(model) %>% 
   mutate(
     RMSE = yardstick::rmse_vec(turnout_ratio, .pred),
@@ -883,18 +954,47 @@ lm_final_training <- function(lm_workflow, data_split){
 
 ```{r}
 # Fit and test a final linear regression model for which its coefficients were determined without spatial cross validation
-lm_fit_lst <- lm_final_training(lm_workflow=lm_best_wf, data_split=data_split)
+# Composite of best predictor variables
+lm_fit_lst_final <- lm_final_training(lm_workflow=lm_best_wf_final, data_split=data_split)
 
-lm_val_fit_geo <- lm_fit_lst[[1]]
-lm_val_pred_geo <- lm_fit_lst[[2]]
+lm_val_fit_geo_final <- lm_fit_lst_final[[1]]
+lm_val_pred_geo_final <- lm_fit_lst_final[[2]]
 ```
 
 ```{r}
 # Fit and test a final linear regression model for which its coefficients were determined with spatial cross validation
-lm_fit_lst_spatial <- lm_final_training(lm_workflow=lm_best_wf_spatial, data_split=data_split)
+# Composite of best predictor variables
+lm_fit_lst_spatial_final <- lm_final_training(lm_workflow=lm_best_wf_spatial_final, data_split=data_split)
 
-lm_val_fit_geo_spatial <- lm_fit_lst_spatial[[1]]
-lm_val_pred_geo_spatial <- lm_fit_lst_spatial[[2]]
+lm_val_fit_geo_spatial_final <- lm_fit_lst_spatial_final[[1]]
+lm_val_pred_geo_spatial_final <- lm_fit_lst_spatial_final[[2]]
+```
+
+```{r}
+# Fit and test a final linear regression model for which its coefficients were determined with spatial cross validation
+# Socio-economic
+lm_fit_lst_spatial_economic <- lm_final_training(lm_workflow=lm_best_wf_spatial_economic, data_split=data_split)
+
+lm_val_fit_geo_spatial_economic <- lm_fit_lst_spatial_economic[[1]]
+lm_val_pred_geo_spatial_economic <- lm_fit_lst_spatial_economic[[2]]
+```
+
+```{r}
+# Fit and test a final linear regression model for which its coefficients were determined with spatial cross validation
+# Socio-demographic
+lm_fit_lst_spatial_demographic <- lm_final_training(lm_workflow=lm_best_wf_spatial_demographic, data_split=data_split)
+
+lm_val_fit_geo_spatial_demographic <- lm_fit_lst_spatial_demographic[[1]]
+lm_val_pred_geo_spatial_demographic <- lm_fit_lst_spatial_demographic[[2]]
+```
+
+```{r}
+# Fit and test a final linear regression model for which its coefficients were determined with spatial cross validation
+# Spatial location
+lm_fit_lst_spatial_location <- lm_final_training(lm_workflow=lm_best_wf_spatial_location, data_split=data_split)
+
+lm_val_fit_geo_spatial_location <- lm_fit_lst_spatial_location[[1]]
+lm_val_pred_geo_spatial_location <- lm_fit_lst_spatial_location[[2]]
 ```
 
 ```{r}
@@ -920,28 +1020,62 @@ rf_final_training <- function(rf_workflow, data_split){
 
 ```{r}
 # Fit and test a final random forest model for which its hyperparameters were determined without spatial cross validation
-rf_fit_lst <- rf_final_training(rf_workflow=rf_best_wf, data_split=data_split)
+# Composite of best predictors
+rf_fit_lst_final <- rf_final_training(rf_workflow=rf_best_wf_final, data_split=data_split)
 
-rf_val_fit_geo <- rf_fit_lst[[1]]
-rf_val_pred_geo <- rf_fit_lst[[2]]
+rf_val_fit_geo_final <- rf_fit_lst_final[[1]]
+rf_val_pred_geo_final <- rf_fit_lst_final[[2]]
 ```
 
 ```{r}
 # Fit and test a final random forest model for which its hyperparameters were determined with spatial cross validation
-rf_fit_lst_spatial <- rf_final_training(rf_workflow=rf_best_wf_spatial, data_split=data_split)
+# Composite of best predictors
+rf_fit_lst_spatial_final <- rf_final_training(rf_workflow=rf_best_wf_spatial_final, data_split=data_split)
 
-rf_val_fit_geo_spatial <- rf_fit_lst_spatial[[1]]
-rf_val_pred_geo_spatial <- rf_fit_lst_spatial[[2]]
+rf_val_fit_geo_spatial_final <- rf_fit_lst_spatial_final[[1]]
+rf_val_pred_geo_spatial_final <- rf_fit_lst_spatial_final[[2]]
 ```
 
+```{r}
+# Fit and test a final random forest model for which its hyperparameters were determined with spatial cross validation
+# Socio-economic
+rf_fit_lst_spatial_economic <- rf_final_training(rf_workflow=rf_best_wf_spatial_economic, data_split=data_split)
+
+rf_val_fit_geo_spatial_economic <- rf_fit_lst_spatial_economic[[1]]
+rf_val_pred_geo_spatial_economic <- rf_fit_lst_spatial_economic[[2]]
+```
+
+```{r}
+# Fit and test a final random forest model for which its hyperparameters were determined with spatial cross validation
+# Socio-demographic
+rf_fit_lst_spatial_demographic <- rf_final_training(rf_workflow=rf_best_wf_spatial_demographic, data_split=data_split)
+
+rf_val_fit_geo_spatial_demographic <- rf_fit_lst_spatial_demographic[[1]]
+rf_val_pred_geo_spatial_demographic <- rf_fit_lst_spatial_demographic[[2]]
+```
+
+```{r}
+# Fit and test a final random forest model for which its hyperparameters were determined with spatial cross validation
+# Spatial location
+rf_fit_lst_spatial_location <- rf_final_training(rf_workflow=rf_best_wf_spatial_location, data_split=data_split)
+
+rf_val_fit_geo_spatial_location <- rf_fit_lst_spatial_location[[1]]
+rf_val_pred_geo_spatial_location <- rf_fit_lst_spatial_location[[2]]
+```
 
 ```{r}
 # Aggregate test set predictions (these do not overlap with training prediction set, which is OOF_preds) with error statistics
 val_preds <- rbind(
-  data.frame(dplyr::select(lm_val_pred_geo, .pred, turnout_ratio), model = "Model-1a_Linear Regression"),
-                   data.frame(dplyr::select(lm_val_pred_geo_spatial, .pred, turnout_ratio), model = "Model-1b_Linear Regression spatial"),
-                   data.frame(dplyr::select(rf_val_pred_geo, .pred, turnout_ratio), model = "Model-3a_Random Forest"),
-                   data.frame(dplyr::select(rf_val_pred_geo_spatial, .pred, turnout_ratio), model = "Model-3b_Random Forest spatial")) %>% 
+  data.frame(dplyr::select(lm_val_pred_geo_final, .pred, turnout_ratio), model = "Model-1a_Linear Regression final"),
+                   data.frame(dplyr::select(lm_val_pred_geo_spatial_final, .pred, turnout_ratio), model = "Model-1b_Linear Regression spatial final"),
+                     data.frame(dplyr::select(lm_val_pred_geo_spatial_economic, .pred, turnout_ratio), model = "Model-1c_Linear Regression spatial economic"),
+                     data.frame(dplyr::select(lm_val_pred_geo_spatial_demographic, .pred, turnout_ratio), model = "Model-1d_Linear Regression spatial demographic"),
+                     data.frame(dplyr::select(lm_val_pred_geo_spatial_location, .pred, turnout_ratio), model = "Model-1e_Linear Regression spatial location"),
+                   data.frame(dplyr::select(rf_val_pred_geo_final, .pred, turnout_ratio), model = "Model-2a_Random Forest final"),
+                   data.frame(dplyr::select(rf_val_pred_geo_spatial_final, .pred, turnout_ratio), model = "Model-2b_Random Forest spatial final"),
+  data.frame(dplyr::select(rf_val_pred_geo_spatial_economic, .pred, turnout_ratio), model = "Model-2c_Random Forest spatial economic"),
+  data.frame(dplyr::select(rf_val_pred_geo_spatial_demographic, .pred, turnout_ratio), model = "Model-2d_Random Forest spatial demographic"),
+  data.frame(dplyr::select(rf_val_pred_geo_spatial_location, .pred, turnout_ratio), model = "Model-2e_Random Forest spatial location")) %>% 
   group_by(model) %>% 
   mutate(RMSE = yardstick::rmse_vec(turnout_ratio, .pred),
          MAE  = yardstick::mae_vec(turnout_ratio, .pred),
@@ -997,39 +1131,108 @@ Check if the assumptions of final trained linear regression model hold using thi
 ```{r}
 # Check assumptions of linear regression like multicollinearity, which occurs when the predictor variables actually predict one another, and due to correlation some predictor variables may also be redundant
 # Information from: https://jhudatascience.org/tidyversecourse/model.html 5.14.1.4 and https://cran.r-project.org/web/packages/performance/performance.pdf
-lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # Without spatial cross validation
+# Composite of best predictors
+lm_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # Without spatial cross validation
 ```
 
 ```{r} 
-lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # With spatial cross validation
+# Composite of best predictors
+lm_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # With spatial cross validation
+```
+
+```{r} 
+# Socio-economic
+lm_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # With spatial cross validation
+```
+
+```{r} 
+# Socio-demographic
+lm_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # With spatial cross validation
+```
+
+```{r} 
+# Spatial location
+lm_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% check_model(panel=FALSE) # With spatial cross validation
 ```
 
 ```{r}
 # Check multicollinearity with vif of car package
-lm_model <- lm_val_fit_geo %>% pluck(".workflow", 1) %>% extract_fit_engine()
-lm_model %>% car::vif() # Without spatial cross validation
+# Composite of best predictors
+lm_model_final <- lm_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_engine()
+lm_model_final %>% car::vif() # Without spatial cross validation
 ```
 
 ```{r}
 # Check multicollinearity with vif of car package
-lm_model_spatial <- lm_val_fit_geo_spatial %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-lm_model_spatial %>% car::vif() # With spatial cross validation
+# Composite of best predictors
+lm_model_spatial_final <- lm_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+lm_model_spatial_final %>% car::vif() # With spatial cross validation
+```
+
+```{r}
+# Check multicollinearity with vif of car package
+# Socio-economic
+lm_model_spatial_economic <- lm_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+lm_model_spatial_economic %>% car::vif() # With spatial cross validation
+```
+
+```{r}
+# Check multicollinearity with vif of car package
+# Socio-demographic
+lm_model_spatial_demographic <- lm_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+lm_model_spatial_demographic %>% car::vif() # With spatial cross validation
+```
+
+```{r}
+# Check multicollinearity with vif of car package
+# Spatial location
+lm_model_spatial_location <- lm_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+lm_model_spatial_location %>% car::vif() # With spatial cross validation
+```
+
+```{r}
+# Inspect more model statistics 
+# Without spatial cross validation
+# Composite of best predictors
+tidy(lm_model_final)
+augment(lm_model_final)
+glance(lm_model_final)
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
-tidy(lm_model)
-augment(lm_model)
-glance(lm_model)
+# Composite of best predictors
+tidy(lm_model_spatial_final)
+augment(lm_model_spatial_final)
+glance(lm_model_spatial_final)
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
-tidy(lm_model_spatial)
-augment(lm_model_spatial)
-glance(lm_model_spatial)
+# Socio-economic
+tidy(lm_model_spatial_economic)
+augment(lm_model_spatial_economic)
+glance(lm_model_spatial_economic)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+# Socio-demographic
+tidy(lm_model_spatial_demographic)
+augment(lm_model_spatial_demographic)
+glance(lm_model_spatial_demographic)
+```
+
+```{r}
+# Inspect more model statistics 
+# With spatial cross validation
+# Spatial location
+tidy(lm_model_spatial_location)
+augment(lm_model_spatial_location)
+glance(lm_model_spatial_location)
 ```
 
 ```{r}
@@ -1116,60 +1319,153 @@ lm_check_autocorrelation <- function(fit_model, weight_matrix, dataset, test_dat
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using adjacency matrix
-lm_res_adj_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
-lm_res_adj_moran <- lm_res_adj_lst[[1]]
-lm_res_adj <- lm_res_adj_lst[[2]]
+# Composite of best predictors
+lm_res_adj_lst_final <- lm_check_autocorrelation(fit_model=lm_model_final, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_final, n_permutations=1000, suffix='')
+lm_res_adj_moran_final <- lm_res_adj_lst_final[[1]]
+lm_res_adj_final <- lm_res_adj_lst_final[[2]]
 ```
 
 ```{r}
 # Show residual plot using adjacency matrix and no spatial cross validation
-lm_res_adj
+lm_res_adj_moran_final
+lm_res_adj_final
 ```
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance matrix
-lm_res_ids_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
-lm_res_ids_moran <- lm_res_ids_lst[[1]]
-lm_res_ids <- lm_res_ids_lst[[2]]
+lm_res_ids_lst_final <- lm_check_autocorrelation(fit_model=lm_model_final, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_final, n_permutations=1000, suffix='')
+lm_res_ids_moran_final <- lm_res_ids_lst_final[[1]]
+lm_res_ids_final <- lm_res_ids_lst_final[[2]]
 ```
 
 ```{r}
-# Show residual plot using adjacency matrix and no spatial cross validation
-lm_res_ids
-```
-
-```{r}
-# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_ids2_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
-lm_res_ids2_moran <- lm_res_ids2_lst[[1]]
-lm_res_ids2 <- lm_res_ids2_lst[[2]]
-```
-
-```{r}
-# Show residual plot using adjacency matrix and no spatial cross validation
-lm_res_ids2
+# Show residual plot using inverse distance matrix and no spatial cross validation
+lm_res_ids_moran_final 
+lm_res_ids_final
 ```
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using inverse distance squared matrix
-lm_res_expdis_lst <- lm_check_autocorrelation(fit_model=lm_model, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo, n_permutations=1000, suffix='')
-lm_res_expdis_moran <- lm_res_expdis_lst[[1]]
-lm_res_expdis <- lm_res_expdis_lst[[2]]
+lm_res_ids2_lst_final <- lm_check_autocorrelation(fit_model=lm_model_final, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_final, n_permutations=1000, suffix='')
+lm_res_ids2_moran_final <- lm_res_ids2_lst_final[[1]]
+lm_res_ids2_final <- lm_res_ids2_lst_final[[2]]
 ```
 
 ```{r}
-# Show residual plot using adjacency matrix and no spatial cross validation
-lm_res_expdis
+# Show residual plot using inverse distance squared matrix and no spatial cross validation
+lm_res_ids2_moran_final
+lm_res_ids2_final
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined without spatial cross correlation, using exp matrix
+lm_res_expdis_lst_final <- lm_check_autocorrelation(fit_model=lm_model_final, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_final, n_permutations=1000, suffix='')
+lm_res_expdis_moran_final <- lm_res_expdis_lst_final[[1]]
+lm_res_expdis_final <- lm_res_expdis_lst_final[[2]]
+```
+
+```{r}
+# Show residual plot using exp matrix and no spatial cross validation
+lm_res_expdis_moran_final
+lm_res_expdis_final
 ```
 
 ```{r}
 # Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using adjacency matrix
-lm_res_adj_spatial <- lm_check_autocorrelation(fit_model=lm_model_spatial, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial, n_permutations=1000, suffix='spatial')
+# Composite of best predictors
+lm_res_adj_spatial_lst_final <- lm_check_autocorrelation(fit_model=lm_model_spatial_final, weight_matrix=Wadj, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_final, n_permutations=1000, suffix='spatial')
+lm_res_adj_spatial_moran_final <- lm_res_adj_spatial_lst_final[[1]]
+lm_res_adj_spatial_final <- lm_res_adj_spatial_lst_final[[2]]
 ```
 
 ```{r}
 # Show residual plot using adjacency matrix and with spatial cross validation
-lm_res_adj_spatial
+lm_res_adj_spatial_moran_final
+lm_res_adj_spatial_final
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using inverse distance matrix
+# Composite of best predictors
+lm_res_ids_spatial_lst_final <- lm_check_autocorrelation(fit_model=lm_model_spatial_final, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_final, n_permutations=1000, suffix='spatial')
+lm_res_ids_spatial_moran_final <- lm_res_ids_spatial_lst_final[[1]]
+lm_res_ids_spatial_final <- lm_res_ids_spatial_lst_final[[2]]
+```
+
+```{r}
+# Show residual plot using inverse distance matrix and with spatial cross validation
+lm_res_ids_spatial_moran_final
+lm_res_ids_spatial_final
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using inverse distance^2 matrix
+# Composite of best predictors
+lm_res_ids2_spatial_lst_final <- lm_check_autocorrelation(fit_model=lm_model_spatial_final, weight_matrix=Wids2, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_final, n_permutations=1000, suffix='spatial')
+lm_res_ids2_spatial_moran_final <- lm_res_ids2_spatial_lst_final[[1]]
+lm_res_ids2_spatial_final <- lm_res_ids2_spatial_lst_final[[2]]
+```
+
+```{r}
+# Show residual plot using inverse distance^2 matrix and with spatial cross validation
+lm_res_ids2_spatial_moran_final
+lm_res_ids2_spatial_final
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using exp matrix
+# Composite of best predictors
+lm_res_expdis_spatial_lst_final <- lm_check_autocorrelation(fit_model=lm_model_spatial_final, weight_matrix=Wexpdis, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_final, n_permutations=1000, suffix='spatial')
+lm_res_expdis_spatial_moran_final <- lm_res_expdis_spatial_lst_final[[1]]
+lm_res_expdis_spatial_final <- lm_res_expdis_spatial_lst_final[[2]]
+```
+
+```{r}
+# Show residual plot using exp matrix and with spatial cross validation
+lm_res_expdis_spatial_moran_final
+lm_res_expdis_spatial_final
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using inverse distance matrix
+# Socio-economic
+lm_res_ids_spatial_lst_economic <- lm_check_autocorrelation(fit_model=lm_model_spatial_economic, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_economic, n_permutations=1000, suffix='spatial')
+lm_res_ids_spatial_moran_economic <- lm_res_ids_spatial_lst_economic[[1]]
+lm_res_ids_spatial_economic <- lm_res_ids_spatial_lst_economic[[2]]
+```
+
+```{r}
+# Show residual plot using inverse distance matrix and with spatial cross validation
+lm_res_ids_spatial_moran_economic
+lm_res_ids_spatial_economic
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using inverse distance matrix
+# Socio-demographic
+lm_res_ids_spatial_lst_demographic <- lm_check_autocorrelation(fit_model=lm_model_spatial_demographic, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_demographic, n_permutations=1000, suffix='spatial')
+lm_res_ids_spatial_moran_demographic <- lm_res_ids_spatial_lst_demographic[[1]]
+lm_res_ids_spatial_demographic <- lm_res_ids_spatial_lst_demographic[[2]]
+```
+
+```{r}
+# Show residual plot using inverse distance matrix and with spatial cross validation
+lm_res_ids_spatial_moran_demographic
+lm_res_ids_spatial_demographic
+```
+
+```{r}
+# Inspect spatial autocorrelation when linear regression coefficients were determined with spatial cross correlation, using inverse distance matrix
+# Spatial location
+lm_res_ids_spatial_lst_location <- lm_check_autocorrelation(fit_model=lm_model_spatial_location, weight_matrix=Wids, dataset=neighbourhood_data, test_data=test.set, training_data=train.set, test_predictions=lm_val_pred_geo_spatial_location, n_permutations=1000, suffix='spatial')
+lm_res_ids_spatial_moran_location <- lm_res_ids_spatial_lst_location[[1]]
+lm_res_ids_spatial_location <- lm_res_ids_spatial_lst_location[[2]]
+```
+
+```{r}
+# Show residual plot using inverse distance matrix and with spatial cross validation
+lm_res_ids_spatial_moran_location
+lm_res_ids_spatial_location
 ```
 
 For both linear regression models that are trained on a cross validation split with and without taking the spatial nature of the dataset into account, and for different weight matrices, significant spatial autocorrelation in the data can be concluded.
@@ -1251,19 +1547,19 @@ gwr_final_bisquare
 
 ```{r}
 # Socio-economic variables
-gwr_economic_gauss
+# gwr_economic_gauss
 gwr_economic_bisquare
 ```
 
 ```{r}
 # Socio-demographic variables
-gwr_demographic_gauss
+# gwr_demographic_gauss
 gwr_demographic_bisquare
 ```
 
 ```{r}
 # Spatial location variables
-gwr_location_gauss
+# gwr_location_gauss
 gwr_location_bisquare
 ```
 
@@ -1276,18 +1572,18 @@ gwr_out_final_bisquare <- as.data.frame(gwr_final_bisquare$SDF)
 
 ```{r}
 # Socio-economic variables
-gwr_out_economic_gauss <- as.data.frame(gwr_economic_gauss$SDF)
+# gwr_out_economic_gauss <- as.data.frame(gwr_economic_gauss$SDF)
 gwr_out_economic_bisquare <- as.data.frame(gwr_economic_bisquare$SDF)
 ```
 ```{r}
 # Socio-demographic variables
-gwr_out_demographic_gauss <- as.data.frame(gwr_demographic_gauss$SDF)
+# gwr_out_demographic_gauss <- as.data.frame(gwr_demographic_gauss$SDF)
 gwr_out_demographic_bisquare <- as.data.frame(gwr_demographic_bisquare$SDF)
 ```
 
 ```{r}
 # Spatial location variables
-gwr_out_location_gauss <- as.data.frame(gwr_location_gauss$SDF)
+# gwr_out_location_gauss <- as.data.frame(gwr_location_gauss$SDF)
 gwr_out_location_bisquare <- as.data.frame(gwr_location_bisquare$SDF)
 ```
 
@@ -1303,8 +1599,8 @@ mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9,
 
 ```{r}
 # Socio-economic variables
-neighbourhood_data$localR2 <- gwr_out_economic_gauss$localR2
-mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+# neighbourhood_data$localR2 <- gwr_out_economic_gauss$localR2
+# mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 
 neighbourhood_data$localR2 <- gwr_out_economic_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
@@ -1312,8 +1608,8 @@ mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9,
 
 ```{r}
 # Socio-demographic variables
-neighbourhood_data$localR2 <- gwr_out_demographic_gauss$localR2
-mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+# neighbourhood_data$localR2 <- gwr_out_demographic_gauss$localR2
+# mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 
 neighbourhood_data$localR2 <- gwr_out_demographic_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
@@ -1321,8 +1617,8 @@ mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9,
 
 ```{r}
 # Spatial location variables
-neighbourhood_data$localR2 <- gwr_out_location_gauss$localR2
-mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
+# neighbourhood_data$localR2 <- gwr_out_location_gauss$localR2
+# mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
 
 neighbourhood_data$localR2 <- gwr_out_location_bisquare$localR2
 mapview::mapview(neighbourhood_data, zcol = "localR2", col.regions=brewer.pal(9, "RdYlGn")) 
@@ -1406,13 +1702,13 @@ for (i in 1:length(lst_final_str)){
 
 ```{r}
 # Socio-economic variables
-gwr_lst_coef_economic_gauss <- list()
-gwr_lst_sig_economic_gauss <- list()
-for (i in 1:length(lst_economic_str)){
-  gwr_lst_economic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_gauss, predictor=lst_economic_str[[i]], suffix="")
-  gwr_lst_coef_economic_gauss[[i]] <- gwr_lst_economic_gauss[[1]] 
-  gwr_lst_sig_economic_gauss[[i]] <- gwr_lst_economic_gauss[[2]]
-}
+# gwr_lst_coef_economic_gauss <- list()
+# gwr_lst_sig_economic_gauss <- list()
+# for (i in 1:length(lst_economic_str)){
+#   gwr_lst_economic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_economic_gauss, predictor=lst_economic_str[[i]], suffix="")
+#   gwr_lst_coef_economic_gauss[[i]] <- gwr_lst_economic_gauss[[1]] 
+#   gwr_lst_sig_economic_gauss[[i]] <- gwr_lst_economic_gauss[[2]]
+# }
 ```
 
 ```{r}
@@ -1427,13 +1723,13 @@ for (i in 1:length(lst_economic_str)){
 
 ```{r}
 # Socio-demographic variables
-gwr_lst_coef_demographic_gauss <- list()
-gwr_lst_sig_demographic_gauss <- list()
-for (i in 1:length(lst_demographic_str)){
-  gwr_lst_demographic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_gauss, predictor=lst_demographic_str[[i]], suffix="")
-  gwr_lst_coef_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[1]] 
-  gwr_lst_sig_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[2]]
-}
+# gwr_lst_coef_demographic_gauss <- list()
+# gwr_lst_sig_demographic_gauss <- list()
+# for (i in 1:length(lst_demographic_str)){
+#   gwr_lst_demographic_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_demographic_gauss, predictor=lst_demographic_str[[i]], suffix="")
+#   gwr_lst_coef_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[1]] 
+#   gwr_lst_sig_demographic_gauss[[i]] <- gwr_lst_demographic_gauss[[2]]
+# }
 ```
 
 ```{r}
@@ -1448,13 +1744,13 @@ for (i in 1:length(lst_demographic_str)){
 
 ```{r}
 # Spatial location variables
-gwr_lst_coef_location_gauss <- list()
-gwr_lst_sig_location_gauss <- list()
-for (i in 1:length(lst_location_str)){
-  gwr_lst_location_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_gauss, predictor=lst_location_str[[i]], suffix="")
-  gwr_lst_coef_location_gauss[[i]] <- gwr_lst_location_gauss[[1]] 
-  gwr_lst_sig_location_gauss[[i]] <- gwr_lst_location_gauss[[2]]
-}
+# gwr_lst_coef_location_gauss <- list()
+# gwr_lst_sig_location_gauss <- list()
+# for (i in 1:length(lst_location_str)){
+#   gwr_lst_location_gauss <- map_coefficient_var_sig(data=neighbourhood_data, gwr_results=gwr_out_location_gauss, predictor=lst_location_str[[i]], suffix="")
+#   gwr_lst_coef_location_gauss[[i]] <- gwr_lst_location_gauss[[1]] 
+#   gwr_lst_sig_location_gauss[[i]] <- gwr_lst_location_gauss[[2]]
+# }
 ```
 
 ```{r}
@@ -1485,10 +1781,10 @@ for (i in 1:length(gwr_lst_coef_final_bisquare)){
 
 ```{r}
 # Socio-economic variables
-for (i in 1:length(gwr_lst_coef_economic_gauss)){
-  show(gwr_lst_coef_economic_gauss[[i]])
-  show(gwr_lst_sig_economic_gauss[[i]])
-}
+# for (i in 1:length(gwr_lst_coef_economic_gauss)){
+#   show(gwr_lst_coef_economic_gauss[[i]])
+#   show(gwr_lst_sig_economic_gauss[[i]])
+# }
 ```
 
 ```{r}
@@ -1500,10 +1796,10 @@ for (i in 1:length(gwr_lst_coef_economic_bisquare)){
 
 ```{r}
 # Socio-demographic variables
-for (i in 1:length(gwr_lst_coef_demographic_gauss)){
-  show(gwr_lst_coef_demographic_gauss[[i]])
-  show(gwr_lst_sig_demographic_gauss[[i]])
-}
+# for (i in 1:length(gwr_lst_coef_demographic_gauss)){
+#   show(gwr_lst_coef_demographic_gauss[[i]])
+#   show(gwr_lst_sig_demographic_gauss[[i]])
+# }
 ```
 
 ```{r}
@@ -1515,10 +1811,10 @@ for (i in 1:length(gwr_lst_coef_demographic_bisquare)){
 
 ```{r}
 # Spatial location variables
-for (i in 1:length(gwr_lst_coef_location_gauss)){
-  show(gwr_lst_coef_location_gauss[[i]])
-  show(gwr_lst_sig_location_gauss[[i]])
-}
+# for (i in 1:length(gwr_lst_coef_location_gauss)){
+#   show(gwr_lst_coef_location_gauss[[i]])
+#   show(gwr_lst_sig_location_gauss[[i]])
+# }
 ```
 
 ```{r}
