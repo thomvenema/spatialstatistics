@@ -1,8 +1,12 @@
 ---
-title: "Modelling spatial variability of Municipal Council election turnout in the Netherlands"
-author: "Max van den Elsen (2590611), Sander Engelberts (1422138), and Thom Venema (1157485)"
-date: 'April 2022'
-output: html_document
+title: Modelling spatial variability of Municipal Council election turnout in the
+  Netherlands
+author: Max van den Elsen (2590611), Sander Engelberts (1422138), and Thom Venema
+  (1157485)
+date: "April 2022"
+output:
+  pdf_document: default
+  html_document: default
 ---
 Term project for the MSc Applied Data Science course Spatial statistics and machine learning at Utrecht University. 
 
@@ -121,6 +125,7 @@ print(paste("There are ", nrow(neighbourhood_data), " neighbourhoods in the orig
 turnout_plot <- ggplot(data = neighbourhood_data) +
   geom_density(alpha=0.8, colour="black", fill="green3", aes(x = turnout_ratio)) +
   xlab("Election turnout fraction") +
+  xlim(0, 5)
   theme_classic()
 
 # Plot the population density variable 
@@ -2056,50 +2061,55 @@ To investigate what variables are most important for the Random Forest model to 
 # Inspect more model statistics 
 # Without spatial cross validation
 # Composite of best predictors
-rf_model_final <- lm_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_final)
-augment(rf_model_final)
-glance(rf_model_final)
+rf_model_final <- rf_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+rf_model_final
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
 # Composite of best predictors
-rf_model_spatial_final <- lm_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_spatial_final)
-augment(rf_model_spatial_final)
-glance(rf_model_spatial_final)
+rf_model_spatial_final <- rf_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+rf_model_spatial_final
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
 # Socio-economic
-rf_model_spatial_economic <- lm_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_spatial_economic)
-augment(rf_model_spatial_economic)
-glance(rf_model_spatial_economic)
+rf_model_spatial_economic <- rf_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+rf_model_spatial_economic
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
 # Socio-demographic
-rf_model_spatial_demographic <- lm_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_spatial_demographic)
-augment(rf_model_spatial_demographic)
-glance(rf_model_spatial_demographic)
+rf_model_spatial_demographic <- rf_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+rf_model_spatial_demographic
 ```
 
 ```{r}
 # Inspect more model statistics 
 # With spatial cross validation
 # Spatial location
-rf_model_spatial_location <- lm_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_engine() 
-tidy(rf_model_spatial_location)
-augment(rf_model_spatial_location)
-glance(rf_model_spatial_location)
+rf_model_spatial_location <- rf_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_engine() 
+rf_model_spatial_location
+```
+
+```{r}
+# Create a list with English string representation of the predictors in each equation for plotting purposes
+# Socio-economic variables
+features_economic_str <- list("Avg. house value", "No. income earners", "% Low income")
+
+# Socio-demographic variables
+features_demographic_str <- list("% Female", "% 0-15 y/o", "% 15-25 y/o", "% 25-45 y/o", "% 45-65 y/o", "% Divorced", "% Western Immigrant", "% Non-western Immigrant")
+
+# Spatial location variables
+features_location_str <- list("Pop. Density per km2", "No. Companies", "High School within 3km", "Distance to voting station")
+
+# Composite of most promising variables 
+features_final_str <- list("Pop. Density per km2", "% Female", "% 0-15 y/o", "% 15-25 y/o", "% 25-45 y/o", "% 45-65 y/o", "% Divorced", "% Western Immigrant", "% Non-western Immigrant", "No. Companies", "Avg. house value", "No. income earners", "% Low income", "High School within 3km", "Distance to voting station")
 ```
 
 ```{r}
@@ -2107,33 +2117,33 @@ glance(rf_model_spatial_location)
 # Without spatial cross-validation
 # Composite of best predictors
 rf_val_fit_geo_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>%
-vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) + scale_x_discrete(labels=features_final_str)
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
 # Composite of best predictors
-rf_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+rf_val_fit_geo_spatial_final %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 15, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) + scale_x_discrete(labels=features_final_str)
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
 # Socio-economic
-rf_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 3, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+rf_val_fit_geo_spatial_economic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 3, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) + scale_x_discrete(labels=features_economic_str)
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
 # Socio-demographic
-rf_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 8, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+rf_val_fit_geo_spatial_demographic %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 8, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) + scale_x_discrete(labels=features_demographic_str)
 ```
 
 ```{r}
 # Plot the variable importance based on permutation (because on that is trained in tidymodels)
 # With spatial cross-validation
 # Spatial location
-rf_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 4, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) 
+rf_val_fit_geo_spatial_location %>% pluck(".workflow", 1) %>% extract_fit_parsnip() %>% vip::vip(num_features = 4, idth = 0.5, aesthetics = list(fill = "purple2"), include_type = T) + scale_x_discrete(labels=features_location_str)
 ```
