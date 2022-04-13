@@ -245,19 +245,12 @@ for (o in 1:nrow(matcher)){
   df_final[row_merged,8] <- y_station  
 }
 
+#Keeping the relevant columns
 df_final <- df_final[,c(1,3,4,5,7,8)]
+
+
 write.csv(df_final,"turnout_per_station_XY.csv", row.names = FALSE)
 
-
-#    Toe te voegen:
-
-# x  -Missende stembureaus
-# x  -Gebiednummer toevoegen aan eerste deel
-# x  -Samenvoegen duplicates
-# x  -Coordinaten
-#   -Buurtcode # Niet meer nodig?
-#   -Population die naar dat stembureau zou gaan gebasseerd op thyssen polgon en aantal stemgerechtigden
-#   -Betere turnout rate
 
 
 
